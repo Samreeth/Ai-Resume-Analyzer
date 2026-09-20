@@ -1,0 +1,20 @@
+# Python NLP service ignore rules
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.local
+!.env.example
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/

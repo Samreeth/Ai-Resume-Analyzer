@@ -1,0 +1,39 @@
+{
+  "name": "ai-resume-analyzer-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Node.js Express backend API for AI-Powered Resume Analyzer",
+  "main": "src/server.mjs",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "nodemon src/server.mjs",
+    "db:migrate": "node src/database/migrate.mjs",
+    "db:seed": "node src/database/seed.mjs",
+    "db:verify": "node src/database/verify.mjs",
+    "test:auth": "node test/auth.test.mjs",
+    "test:e2e": "node test/live_e2e_verification.mjs"
+  },
+  "keywords": [
+    "resume",
+    "analyzer",
+    "nlp",
+    "express",
+    "nodejs",
+    "esm"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

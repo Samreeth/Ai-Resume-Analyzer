@@ -1,0 +1,10 @@
+# Server-specific ignore rules
+node_modules/
+coverage/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
