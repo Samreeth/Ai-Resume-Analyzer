@@ -11,7 +11,8 @@
     "db:seed": "node src/database/seed.mjs",
     "db:verify": "node src/database/verify.mjs",
     "test:auth": "node test/auth.test.mjs",
-    "test:e2e": "node test/live_e2e_verification.mjs"
+    "test:e2e": "node test/live_e2e_verification.mjs",
+    "test:resume": "node test/resume.test.mjs"
   },
   "keywords": [
     "resume",
@@ -30,7 +31,9 @@
     "express": "^4.21.2",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.4.0",
     "pg": "^8.13.3",
+    "yauzl": "^3.4.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

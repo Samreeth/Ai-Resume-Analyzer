@@ -6,6 +6,7 @@ import { testDbConnection } from './config/database.mjs';
 import { sendSuccess } from './utils/response.mjs';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.mjs';
 import authRoutes from './routes/auth.routes.mjs';
+import resumeRoutes from './routes/resume.routes.mjs';
 
 const app = express();
 
@@ -76,6 +77,9 @@ app.get('/api', (req, res) => {
 
 // Authentication Routes
 app.use('/api/auth', authRoutes);
+
+// Resume Management Routes
+app.use('/api/resumes', resumeRoutes);
 
 // 404 Not Found Middleware
 app.use(notFoundHandler);

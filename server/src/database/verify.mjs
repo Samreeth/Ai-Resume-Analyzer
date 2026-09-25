@@ -270,6 +270,34 @@ export const runVerification = async () => {
       }
     });
 
+    // 9b. Migration 004 Metadata Test: file_size, mime_type, file_hash, and idx_resumes_user_uploaded
+    await test('Migration 004 Test: Resumes table supports metadata columns and bounds check', async () => {
+      const sampleHash = 'a'.repeat(64);
+      const res = await client.query(`
+        INSERT INTO resumes (user_id, file_name, file_path, file_size, mime_type, file_hash)
+        VALUES ($1, 'meta_test.pdf', 'resumes/meta_test.pdf', 1024, 'application/pdf', $2)
+        RETURNING resume_id, file_size, mime_type, file_hash;
+      `, [testUserId, sampleHash]);
+      const metaResumeId = res.rows[0].resume_id;
+
+      try {
+        if (res.rows[0].file_size !== 1024 || res.rows[0].mime_type !== 'application/pdf') {
+          throw new Error('Metadata values not returned correctly');
+        }
+
+        // Bounds check: negative file_size must fail
+        let threw = false;
+        try {
+          await client.query('UPDATE resumes SET file_size = -1 WHERE resume_id = $1', [metaResumeId]);
+        } catch (_) {
+          threw = true;
+        }
+        if (!threw) throw new Error('Expected chk_resumes_file_size constraint violation for negative size');
+      } finally {
+        await client.query('DELETE FROM resumes WHERE resume_id = $1', [metaResumeId]);
+      }
+    });
+
     // 10. Foreign Key Deletion Behavior: Preserves Analyses on Resume/Job Deletion
     await test('Foreign Key Test: Deleting resume sets resume_id = NULL but preserves analysis report', async () => {
       // Delete resume

@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS resumes (
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     file_name VARCHAR(255) NOT NULL,
     file_path TEXT NOT NULL,
+    file_size INTEGER CHECK (file_size IS NULL OR file_size >= 0),
+    mime_type VARCHAR(100),
+    file_hash VARCHAR(64),
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     extracted_data JSONB,
@@ -146,3 +149,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_lower_name ON skills ((LOWER(skill_
 
 -- Dashboard Analysis History Sorting Compound Index
 CREATE INDEX IF NOT EXISTS idx_analyses_user_history ON analyses (user_id, created_at DESC);
+
+-- User Resume Upload History Sorting Compound Index
+CREATE INDEX IF NOT EXISTS idx_resumes_user_uploaded ON resumes (user_id, uploaded_at DESC);
