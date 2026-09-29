@@ -1,339 +1,336 @@
-# API Specification
+# Complete REST API Specification
 
-## 1. Response Standard
+This document provides the authoritative contract specification for all **23 implemented REST API endpoints** in the **AI-Powered Resume Analyzer and Job Matching Platform**.
 
-All backend endpoints adhere to a standardized JSON response format.
+---
 
-### Success Response
+## 1. Global API Conventions
+
+### 1.1 Base URL
+All API routes are served relative to the root server address:
+`http://localhost:5000` (or configured `PORT`).
+
+### 1.2 Standard Response Envelopes
+All responses adhere to standardized JSON envelopes:
+
+**Success Envelope (2xx)**:
 ```json
 {
   "success": true,
   "data": {},
-  "message": "Operation completed successfully"
+  "message": "Human-readable confirmation message"
 }
 ```
 
-### Error Response
+**Error Envelope (4xx / 5xx)**:
 ```json
 {
   "success": false,
   "error": {
-    "code": "ERROR_CODE",
-    "message": "Human-readable description of what went wrong"
+    "code": "ERROR_CODE_STRING",
+    "message": "Descriptive error message",
+    "details": []
   }
 }
 ```
 
----
-
-## 2. Authentication Endpoints (`/api/auth`)
-
-All authentication endpoints are fully implemented in native ES Modules (`.mjs`).
-
-### 2.1 Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "StrongPassword123"
-}
-```
-
-**Validation Rules:**
-- `name`: string, trimmed, min 2, max 100 characters.
-- `email`: valid email format, max 255 characters, case-insensitive uniqueness.
-- `password`: string, min 8, max 128 characters. Hashed with bcrypt (10 rounds).
-
-**Success Response (HTTP 201):**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "created_at": "2026-09-20T12:00:00.000Z"
-    }
-  },
-  "message": "User registered successfully"
-}
-```
-
-**Error Responses:**
-- `400 VALIDATION_ERROR`: Missing/invalid fields or duplicate email (`"Email is already registered"`).
+### 1.3 Standard Error Codes
+- `VALIDATION_ERROR` (400): Request body, parameters, or query parameters violated Zod schema rules.
+- `UNAUTHORIZED` / `AUTHENTICATION_ERROR` (401): Missing, malformed, or expired JWT token.
+- `FORBIDDEN` (403): User lacks permission.
+- `RESOURCE_NOT_FOUND` (404): Resource does not exist or belongs to another tenant (anti-enumeration defense).
+- `CONFLICT` / `RESUME_ALREADY_PROCESSING` (409): Resource state prevents operation.
+- `FILE_TOO_LARGE` (413): Uploaded file exceeds 5 MB.
+- `UNSUPPORTED_MEDIA_TYPE` (415): Uploaded file is not `.pdf` or `.docx` or failed magic-byte validation.
+- `UNPROCESSABLE_ENTITY` (422): Malformed archive, corrupt document, or unextractable text.
+- `INTERNAL_SERVER_ERROR` (500): Unhandled server exception.
 
 ---
 
-### 2.2 Login User
-```http
-POST /api/auth/login
-Content-Type: application/json
-```
+## 2. Endpoint Index Summary (23 Endpoints)
 
-**Request Body:**
-```json
-{
-  "email": "john@example.com",
-  "password": "StrongPassword123"
-}
-```
-
-**Success Response (HTTP 200):**
-```json
-{
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "name": "John Doe",
-      "email": "john@example.com"
-    }
-  },
-  "message": "Login successful"
-}
-```
-
-**Error Responses:**
-- `401 AUTHENTICATION_ERROR`: Invalid email or password.
+| # | Method | Endpoint Route | Auth | Description | Database Action |
+| :---: | :--- | :--- | :---: | :--- | :--- |
+| 1 | `GET` | `/health` | No | Health check and uptime status | Read-only |
+| 2 | `GET` | `/api` | No | API version and discovery summary | Read-only |
+| 3 | `POST` | `/api/auth/register` | No | Register new user account | Writes `users` |
+| 4 | `POST` | `/api/auth/login` | No | Verify credentials & issue JWT | Reads `users` |
+| 5 | `GET` | `/api/auth/me` | Yes | Get authenticated user profile | Reads `users` |
+| 6 | `POST` | `/api/auth/logout` | Yes | Client-side session acknowledgment | No DB action |
+| 7 | `POST` | `/api/resumes` | Yes | Upload & stage PDF/DOCX resume | Writes `resumes` (`PENDING`) |
+| 8 | `GET` | `/api/resumes` | Yes | List paginated user resumes | Reads `resumes` |
+| 9 | `GET` | `/api/resumes/:resumeId` | Yes | Get resume metadata & text | Reads `resumes` |
+| 10 | `POST` | `/api/resumes/:resumeId/process` | Yes | Trigger in-process text & skill extraction | Updates `resumes`, writes `resume_skills` |
+| 11 | `GET` | `/api/resumes/:resumeId/status` | Yes | Poll resume extraction status | Reads `resumes` |
+| 12 | `DELETE` | `/api/resumes/:resumeId` | Yes | Delete resume & file vault asset | Deletes `resumes`, nullifies `analyses.resume_id` |
+| 13 | `POST` | `/api/jobs` | Yes | Create job posting & extract requirements | Writes `job_descriptions` |
+| 14 | `GET` | `/api/jobs` | Yes | List paginated user job postings | Reads `job_descriptions` |
+| 15 | `GET` | `/api/jobs/:jobId` | Yes | Get job posting details | Reads `job_descriptions` |
+| 16 | `PUT` | `/api/jobs/:jobId` | Yes | Update job posting & re-extract skills | Updates `job_descriptions` |
+| 17 | `DELETE` | `/api/jobs/:jobId` | Yes | Delete job posting | Deletes `job_descriptions`, nullifies `analyses.job_id` |
+| 18 | `POST` | `/api/jobs/:jobId/extract` | Yes | Re-run skill extraction on job | Updates `job_descriptions.extracted_data` |
+| 19 | `POST` | `/api/analyses` | Yes | Execute matching & compute scores | Atomic transaction: writes `analyses`, `analysis_skills` |
+| 20 | `GET` | `/api/analyses` | Yes | List user historical analyses | Reads `analyses` |
+| 21 | `GET` | `/api/analyses/:analysisId` | Yes | Get analysis report & matched skills | Reads `analyses`, `analysis_skills` |
+| 22 | `GET` | `/api/analyses/:analysisId/recommendations` | Yes | On-demand quality diagnostics & recommendations | Read-only: zero DB writes |
+| 23 | `DELETE` | `/api/analyses/:analysisId` | Yes | Explicitly delete analysis record | Deletes `analyses`, cascades `analysis_skills` |
 
 ---
 
-### 2.3 Get Current User Profile
-```http
-GET /api/auth/me
-Authorization: Bearer <JWT_TOKEN>
-```
+## 3. System & Discovery Endpoints
 
-**Headers:**
-- `Authorization`: `Bearer <token>` (Required)
+### 3.1 Health Check: `GET /health`
+- **Auth**: None
+- **Query / Body**: None
+- **Success (200 OK)**:
+  ```json
+  {
+    "status": "UP",
+    "timestamp": "2026-09-29T16:00:00.000Z",
+    "uptime": 12.34
+  }
+  ```
 
-**Success Response (HTTP 200):**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "created_at": "2026-09-20T12:00:00.000Z",
-      "updated_at": "2026-09-20T12:00:00.000Z"
-    }
-  },
-  "message": "User profile retrieved successfully"
-}
-```
-
-**Error Responses:**
-- `401 AUTHENTICATION_ERROR`: Missing token (`"Authentication token is required"`) or invalid/expired token.
+### 3.2 API Information: `GET /api`
+- **Auth**: None
+- **Success (200 OK)**:
+  ```json
+  {
+    "name": "AI-Powered Resume Analyzer API",
+    "version": "1.0.0",
+    "status": "active"
+  }
+  ```
 
 ---
 
-### 2.4 Logout
-```http
-POST /api/auth/logout
-```
+## 4. Authentication Endpoints (`/api/auth`)
 
-**Semantics & Client Responsibility:**
-The system uses stateless JWT authentication without server-side session tracking or token revocation. Calling `POST /api/auth/logout` serves as a standard acknowledgment. The client application **must remove and discard its locally stored token** (e.g., from `localStorage`, session storage, or memory) to complete the logout process. The backend does not invalidate an already-issued, unexpired JWT on the server.
+### 4.1 Register User: `POST /api/auth/register`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "name": "Jane Candidate",
+    "email": "jane@example.com",
+    "password": "Password123!"
+  }
+  ```
+- **Validation**: `name` 2–100 chars; `email` valid format (case-insensitive unique); `password` 8–128 chars.
+- **Success (201 Created)**: Returns created user object (excluding `password_hash`).
+- **Errors**: `400 VALIDATION_ERROR` (duplicate email or invalid inputs).
 
-**Success Response (HTTP 200):**
-```json
-{
-  "success": true,
-  "data": {},
-  "message": "Logged out successfully"
-}
-```
+### 4.2 Login User: `POST /api/auth/login`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "email": "jane@example.com",
+    "password": "Password123!"
+  }
+  ```
+- **Success (200 OK)**: Returns JWT bearer token and user summary.
+- **Errors**: `401 AUTHENTICATION_ERROR` (invalid email or password).
 
----
+### 4.3 Get Authenticated Profile: `GET /api/auth/me`
+- **Auth**: `Authorization: Bearer <token>`
+- **Success (200 OK)**: Returns profile for authenticated `req.user.userId`.
+- **Errors**: `401 AUTHENTICATION_ERROR` (missing or invalid token).
 
-## 3. Resume Management Endpoints (`/api/resumes`)
-
-All resume endpoints require authentication (`Authorization: Bearer <JWT_TOKEN>`) and strictly isolate operations to `req.user.userId`.
-
-### 3.1 Upload Resume
-```http
-POST /api/resumes
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...
-```
-
-**Form Data:**
-- `resume`: Binary file stream (PDF or DOCX). Maximum 1 file, maximum 5 MB (5,242,880 bytes). Non-empty.
-
-**Validation & Security Rules:**
-- **Whitelisted Formats**: `.pdf` (`application/pdf`) and `.docx` (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
-- **Magic Bytes Validation**:
-  - PDF: Must begin with `%PDF-` header.
-  - DOCX: Must begin with ZIP signature `PK\x03\x04`.
-- **Metadata-Only DOCX Archive Inspection**:
-  - Buffer-based inspection via `yauzl` without disk extraction.
-  - Required root entry: `[Content_Types].xml`.
-  - Required main document entry: exactly `word/document.xml` (rejects substitutes like `word/document2.xml`).
-  - Limits: maximum 1,000 entries, maximum 255-character entry names.
-  - Strictly rejects path traversal (`..`), absolute paths (`/` or `C:\`), and backslashes (`\`).
-  - Gracefully handles truncated, corrupted, and bomb ZIP payloads.
-- **In-Memory Buffering**: Memory-based staging (`multer.memoryStorage()`); rejected files are discarded before touching the filesystem.
-- **Staged File Persistence**: Writes buffer to `.tmp_<uuid>.tmp` within `uploads/resumes/` and renames to `<uuid>.<ext>`. Cleaned up on database insertion rollback.
-- **Initial Processing State**: New uploads are initially marked with `status: "PENDING"`.
-
-**Success Response (HTTP 201 Created):**
-```json
-{
-  "success": true,
-  "data": {
-    "resume": {
-      "resume_id": "7b5247b4-3a9a-4c28-9842-83b6cb65f142",
-      "file_name": "candidate_resume.pdf",
-      "file_size": 245760,
-      "mime_type": "application/pdf",
-      "file_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "status": "PENDING",
-      "uploaded_at": "2026-09-24T10:30:00.000Z"
-    }
-  },
-  "message": "Resume uploaded successfully"
-}
-```
-
-**Error Responses:**
-- `400 VALIDATION_ERROR`: Missing `resume` form field, zero-byte empty file, or multiple files attached.
-- `401 AUTHENTICATION_ERROR`: Missing, expired, or invalid Bearer token.
-- `413 FILE_TOO_LARGE`: Uploaded file exceeds 5 MB limit.
-- `415 UNSUPPORTED_MEDIA_TYPE`: Invalid extension, mismatched MIME type, corrupted archive, or failed DOCX validation.
+### 4.4 Logout: `POST /api/auth/logout`
+- **Auth**: `Authorization: Bearer <token>`
+- **Behavior**: Stateless acknowledgment. Client must discard local token.
+- **Success (200 OK)**: `{ "success": true, "data": {}, "message": "Logged out successfully" }`.
 
 ---
 
-### 3.2 List Resumes
-```http
-GET /api/resumes?page=1&limit=10
-Authorization: Bearer <JWT_TOKEN>
-```
+## 5. Resume Management Endpoints (`/api/resumes`)
 
-**Query Parameters:**
-- `page`: Integer $\ge 1$ (default: `1`).
-- `limit`: Integer between `1` and `100` (default: `10`).
-
-**Success Response (HTTP 200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "resumes": [
-      {
+### 5.1 Upload Resume: `POST /api/resumes`
+- **Auth**: `Authorization: Bearer <token>`
+- **Content-Type**: `multipart/form-data`
+- **Form Field**: `resume` (Binary file, max 1 file, max 5 MB).
+- **Validation**: Whitelisted `.pdf` or `.docx`, magic bytes check (`%PDF-` or `PK\x03\x04`).
+- **Success (201 Created)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "resume": {
         "resume_id": "7b5247b4-3a9a-4c28-9842-83b6cb65f142",
         "file_name": "candidate_resume.pdf",
         "file_size": 245760,
         "mime_type": "application/pdf",
         "file_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "status": "PENDING",
-        "uploaded_at": "2026-09-24T10:30:00.000Z",
-        "updated_at": "2026-09-24T10:30:00.000Z"
+        "uploaded_at": "2026-09-29T16:10:00.000Z"
       }
-    ],
-    "pagination": {
-      "total": 1,
-      "page": 1,
-      "limit": 10,
-      "total_pages": 1
-    }
-  },
-  "message": "Resumes retrieved successfully"
-}
-```
+    },
+    "message": "Resume uploaded successfully"
+  }
+  ```
+- **Errors**: `400 VALIDATION_ERROR`, `413 FILE_TOO_LARGE`, `415 UNSUPPORTED_MEDIA_TYPE`.
 
-**Error Responses:**
-- `400 VALIDATION_ERROR`: Invalid query parameter format (e.g., negative page, non-integer limit).
-- `401 AUTHENTICATION_ERROR`: Missing or invalid Bearer token.
+### 5.2 List Resumes: `GET /api/resumes`
+- **Auth**: `Authorization: Bearer <token>`
+- **Query**: `page` (integer $\ge 1$, default 1), `limit` (integer 1–100, default 10).
+- **Success (200 OK)**: Paginated array of resumes owned by authenticated user.
 
----
+### 5.3 Get Resume Details: `GET /api/resumes/:resumeId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `resumeId` (UUIDv4).
+- **Success (200 OK)**: Full resume details including `extracted_text` and processing status.
+- **Errors**: `404 RESOURCE_NOT_FOUND` (if unowned or non-existent).
 
-### 3.3 Get Resume Details
-```http
-GET /api/resumes/:resumeId
-Authorization: Bearer <JWT_TOKEN>
-```
+### 5.4 Trigger Processing: `POST /api/resumes/:resumeId/process`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `resumeId` (UUIDv4).
+- **Behavior**: Acquires atomic claim token; transitions status from `'PENDING'` to `'PROCESSING'`; extracts text and runs skill matching; updates status to `'COMPLETED'` (or `'FAILED'`).
+- **Success (200 OK)**: Returns extracted text summary and identified skills.
+- **Errors**: `400 RESUME_ALREADY_COMPLETED`, `404 RESOURCE_NOT_FOUND`, `409 RESUME_ALREADY_PROCESSING`, `422 MAX_PROCESSING_ATTEMPTS_EXCEEDED` (if attempts $\ge 3$).
 
-**Path Parameters:**
-- `resumeId`: Valid UUIDv4 string.
+### 5.5 Poll Processing Status: `GET /api/resumes/:resumeId/status`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `resumeId` (UUIDv4).
+- **Success (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "resumeId": "7b5247b4-3a9a-4c28-9842-83b6cb65f142",
+      "extractionStatus": "COMPLETED",
+      "processingAttempts": 1,
+      "processingStartedAt": "2026-09-29T16:12:00.000Z",
+      "processingCompletedAt": "2026-09-29T16:12:02.000Z",
+      "hasExtractedText": true,
+      "canRetry": false
+    },
+    "message": "Resume processing status retrieved successfully"
+  }
+  ```
 
-**Success Response (HTTP 200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "resume": {
-      "resume_id": "7b5247b4-3a9a-4c28-9842-83b6cb65f142",
-      "file_name": "candidate_resume.pdf",
-      "file_size": 245760,
-      "mime_type": "application/pdf",
-      "file_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "status": "PENDING",
-      "raw_text": null,
-      "parsed_data": null,
-      "uploaded_at": "2026-09-24T10:30:00.000Z",
-      "updated_at": "2026-09-24T10:30:00.000Z"
-    }
-  },
-  "message": "Resume details retrieved successfully"
-}
-```
-
-**Error Responses:**
-- `400 VALIDATION_ERROR`: Invalid UUIDv4 format for `:resumeId`.
-- `401 AUTHENTICATION_ERROR`: Missing or invalid Bearer token.
-- `404 RESOURCE_NOT_FOUND`: Resume does not exist or belongs to another user (IDOR protection).
+### 5.6 Delete Resume: `DELETE /api/resumes/:resumeId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `resumeId` (UUIDv4).
+- **Behavior**: Deletes database record; cascades to `resume_skills`; sets `analyses.resume_id` to `NULL` (`ON DELETE SET NULL`); unlinks stored binary from file vault.
+- **Success (200 OK)**: `{ "success": true, "data": {}, "message": "Resume deleted successfully" }`.
 
 ---
 
-### 3.4 Delete Resume
-```http
-DELETE /api/resumes/:resumeId
-Authorization: Bearer <JWT_TOKEN>
-```
+## 6. Job Description Endpoints (`/api/jobs`)
 
-**Path Parameters:**
-- `resumeId`: Valid UUIDv4 string.
+### 6.1 Create Job Posting: `POST /api/jobs`
+- **Auth**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "title": "Backend Engineer",
+    "company": "Acme Corp",
+    "description": "Requirements: Node.js, PostgreSQL. Preferred: Docker, AWS."
+  }
+  ```
+- **Validation**: `title` 2–255 chars; `description` 20–50,000 chars.
+- **Success (201 Created)**: Stores job and extracted `requiredSkills` / `preferredSkills`.
 
-**Behavior & Guarantees:**
-- Strict multi-tenant ownership check (`WHERE resume_id = $1 AND user_id = $2`).
-- Relational cascades: `resume_skills` records automatically cascade delete.
-- Foreign key preservation: Existing `analyses` records have `resume_id` set to `NULL` (`ON DELETE SET NULL`), preserving historical scores and reports.
-- Filesystem cleanup: Physical file within `uploads/resumes/` is unlinked.
-- In the rare event of an OS filesystem unlink error after database commit, a structured `CRITICAL` error is logged for reconciliation, and the API returns 200 OK because the resource ownership and database row are cleanly severed.
+### 6.2 List Job Postings: `GET /api/jobs`
+- **Auth**: `Authorization: Bearer <token>`
+- **Query**: `page` (default 1), `limit` (default 10).
+- **Success (200 OK)**: Paginated array of user-owned job postings.
 
-**Success Response (HTTP 200 OK):**
-```json
-{
-  "success": true,
-  "data": {},
-  "message": "Resume deleted successfully"
-}
-```
+### 6.3 Get Job Posting: `GET /api/jobs/:jobId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `jobId` (UUIDv4).
+- **Success (200 OK)**: Details of target job description and `extracted_data`.
 
-**Error Responses:**
-- `400 VALIDATION_ERROR`: Invalid UUIDv4 format for `:resumeId`.
-- `401 AUTHENTICATION_ERROR`: Missing or invalid Bearer token.
-- `404 RESOURCE_NOT_FOUND`: Resume does not exist or belongs to another user (IDOR protection).
+### 6.4 Update Job Posting: `PUT /api/jobs/:jobId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `jobId` (UUIDv4).
+- **Request Body**: Same schema as `POST /api/jobs`. Re-runs skill extraction on updated text.
+- **Success (200 OK)**: Updated job record and updated `extracted_data`.
+
+### 6.5 Delete Job Posting: `DELETE /api/jobs/:jobId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `jobId` (UUIDv4).
+- **Behavior**: Deletes job record; sets `analyses.job_id` to `NULL` (`ON DELETE SET NULL`).
+- **Success (200 OK)**: `{ "success": true, "data": {}, "message": "Job description deleted successfully" }`.
+
+### 6.6 Re-extract Job Skills: `POST /api/jobs/:jobId/extract`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `jobId` (UUIDv4).
+- **Behavior**: Re-runs deterministic skill extractor on existing job text and updates `extracted_data`.
+- **Success (200 OK)**: `{ "success": true, "data": { "extracted_data": { ... } }, "message": "Job skills extracted successfully" }`.
 
 ---
 
-## 4. Upcoming Service Endpoints
+## 7. Matching, Analysis & Recommendation Endpoints (`/api/analyses`)
 
-### 4.1 Jobs (`/api/jobs`)
-- `POST /api/jobs`: Create target job description.
-- `GET /api/jobs`: List user jobs.
+### 7.1 Execute Compatibility Matching: `POST /api/analyses`
+- **Auth**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "resumeId": "7b5247b4-3a9a-4c28-9842-83b6cb65f142",
+    "jobId": "e2808c7a-1fc1-4bb2-a6b6-32422e6cf843"
+  }
+  ```
+- **Validation**: Both UUIDs must belong to authenticated user; resume must have `extraction_status = 'COMPLETED'`; job must have valid `extracted_data`.
+- **Scoring**: Computes composite formula: $(0.70 \times S_{\text{req}} + 0.20 \times S_{\text{pref}} + 0.10 \times S_{\text{conf}}) \times 100$.
+- **Database Action**: Atomic transaction writing parent to `analyses` and itemized matches to `analysis_skills`.
+- **Success (201 Created)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "analysis_id": "f51270b2-7bb5-4a18-97ce-87116744c803",
+      "resume_file_name": "candidate_resume.pdf",
+      "job_title": "Backend Engineer",
+      "overall_score": 83.50,
+      "skill_score": 83.50,
+      "quality_score": 0.00,
+      "matched_skills": [...],
+      "missing_skills": [...]
+    },
+    "message": "Resume and job description matched successfully"
+  }
+  ```
+- **Errors**: `404 RESOURCE_NOT_FOUND`, `409 RESUME_NOT_PROCESSED`, `422 JOB_EXTRACTION_UNAVAILABLE`.
 
-### 4.2 Analyses (`/api/analyses`)
-- `POST /api/analyses`: Run resume-to-job matching.
-- `GET /api/analyses/:analysisId`: Get detailed analysis report.
-- `GET /api/analyses`: View analysis history.
+### 7.2 List Historical Analyses: `GET /api/analyses`
+- **Auth**: `Authorization: Bearer <token>`
+- **Query**: `page` (default 1), `limit` (default 10).
+- **Success (200 OK)**: Paginated history of candidate analyses.
+
+### 7.3 Get Analysis Details: `GET /api/analyses/:analysisId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `analysisId` (UUIDv4).
+- **Success (200 OK)**: Full analysis report with matched/missing skill breakdowns and snapshot metadata.
+
+### 7.4 Get Recommendations & Quality Diagnostics: `GET /api/analyses/:analysisId/recommendations`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `analysisId` (UUIDv4).
+- **Behavior**: Evaluates 12 deterministic quality rules against resume text; evaluates skill gaps from `analysis_skills`; synthesizes prioritized suggestions (`HIGH`, `MEDIUM`, `LOW`) across `SKILL_GAP`, `RESUME_QUALITY`, `IMPACT_METRICS`, and `FORMATTING`.
+- **Database Action**: **Read-only; zero database writes**.
+- **Success (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "analysisId": "f51270b2-7bb5-4a18-97ce-87116744c803",
+      "compatibilityScore": 83.50,
+      "qualityScore": 85.00,
+      "qualityBreakdown": {
+        "baseScore": 100.00,
+        "deductions": [...]
+      },
+      "recommendations": [...]
+    },
+    "message": "Recommendations generated successfully"
+  }
+  ```
+
+### 7.5 Delete Analysis: `DELETE /api/analyses/:analysisId`
+- **Auth**: `Authorization: Bearer <token>`
+- **Path Param**: `analysisId` (UUIDv4).
+- **Behavior**: Deletes analysis row from `analyses`; cascades automatically to child rows in `analysis_skills`.
+- **Success (200 OK)**: `{ "success": true, "data": {}, "message": "Analysis deleted successfully" }`.
+- **Errors**: `404 RESOURCE_NOT_FOUND` (if unowned or non-existent).
