@@ -5,8 +5,11 @@ import { ToastProvider } from './context/ToastContext.jsx';
 import AuthLayout from './layouts/AuthLayout.jsx';
 import ProtectedRoute from './layouts/ProtectedRoute.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
+import RegisterPage from './pages/auth/RegisterPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
 
-// Stage 1 Route Mount Placeholders (full pages implemented in Stages 2-5)
+// Stage placeholders for future modules (implemented in Stages 3-5)
 const PlaceholderPage = ({ title, stage }) => (
   <div className="card">
     <div className="card-header">
@@ -14,7 +17,7 @@ const PlaceholderPage = ({ title, stage }) => (
       <span className="badge badge-processing">Stage {stage} Planned</span>
     </div>
     <p style={{ color: 'var(--text-secondary)' }}>
-      Stage 1 Client Foundation & Centralized API Layer active. This view will be fully implemented in Stage {stage}.
+      Module active in development pipeline. This view will be implemented in Stage {stage}.
     </p>
   </div>
 );
@@ -27,15 +30,15 @@ export const App = () => {
           <Routes>
             {/* Public Guest Routes */}
             <Route element={<AuthLayout />}>
-              <Route path="/login" element={<PlaceholderPage title="Login" stage="2" />} />
-              <Route path="/register" element={<PlaceholderPage title="Register" stage="2" />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
             </Route>
 
-            {/* Protected Routes */}
+            {/* Protected Application Routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<PlaceholderPage title="Dashboard Overview" stage="2" />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/resumes" element={<PlaceholderPage title="Resume Management" stage="3" />} />
                 <Route path="/resumes/:resumeId" element={<PlaceholderPage title="Resume Details" stage="3" />} />
                 <Route path="/jobs" element={<PlaceholderPage title="Job Description Management" stage="4" />} />

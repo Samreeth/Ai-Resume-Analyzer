@@ -1,4 +1,5 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useMemo } from 'react';
+import Toast from '../components/common/Toast.jsx';
 
 export const ToastContext = createContext(null);
 
@@ -33,15 +34,23 @@ export const ToastProvider = ({ children }) => {
     addToast('info', message, title);
   }, [addToast]);
 
-  const value = {
-    toasts,
-    toast: {
+  const toast = useMemo(
+    () => ({
       success,
       error,
       info,
-    },
-    removeToast,
-  };
+    }),
+    [success, error, info]
+  );
+
+  const value = useMemo(
+    () => ({
+      toasts,
+      toast,
+      removeToast,
+    }),
+    [toasts, toast, removeToast]
+  );
 
   return (
     <ToastContext.Provider value={value}>
@@ -49,17 +58,14 @@ export const ToastProvider = ({ children }) => {
       {toasts.length > 0 && (
         <div className="toast-container" role="region" aria-label="Notifications">
           {toasts.map((t) => (
-            <div
+            <Toast
               key={t.id}
-              className={`toast toast-${t.type}`}
-              onClick={() => removeToast(t.id)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div>
-                {t.title && <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{t.title}</div>}
-                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{t.message}</div>
-              </div>
-            </div>
+              id={t.id}
+              type={t.type}
+              title={t.title}
+              message={t.message}
+              onDismiss={removeToast}
+            />
           ))}
         </div>
       )}
