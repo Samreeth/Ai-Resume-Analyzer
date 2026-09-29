@@ -1,5 +1,6 @@
 import express from 'express';
 import analysisController from '../controllers/analysis.controller.mjs';
+import recommendationController from '../controllers/recommendation.controller.mjs';
 import { requireAuth } from '../middleware/auth.middleware.mjs';
 
 const router = express.Router();
@@ -16,7 +17,10 @@ router.get('/', analysisController.list);
 // 3. Retrieve single analysis details
 router.get('/:analysisId', analysisController.getById);
 
-// 4. Delete an analysis record
+// 4. Retrieve actionable recommendations & skill gap insights
+router.get('/:analysisId/recommendations', recommendationController.getRecommendations);
+
+// 5. Delete an analysis record
 router.delete('/:analysisId', analysisController.deleteById);
 
 export default router;

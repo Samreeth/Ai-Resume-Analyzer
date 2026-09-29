@@ -14,7 +14,8 @@
     "test:e2e": "node test/live_e2e_verification.mjs",
     "test:resume": "node test/resume.test.mjs",
     "test:extractor": "node test/extractor.test.mjs",
-    "test:processing": "node test/processing.test.mjs"
+    "test:processing": "node test/processing.test.mjs",
+    "test:recommendation": "node test/recommendation.test.mjs"
   },
   "keywords": [
     "resume",
