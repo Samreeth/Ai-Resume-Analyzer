@@ -7,6 +7,7 @@ import { sendSuccess } from './utils/response.mjs';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.mjs';
 import authRoutes from './routes/auth.routes.mjs';
 import resumeRoutes from './routes/resume.routes.mjs';
+import jobRoutes from './routes/job.routes.mjs';
 
 const app = express();
 
@@ -80,6 +81,9 @@ app.use('/api/auth', authRoutes);
 
 // Resume Management Routes
 app.use('/api/resumes', resumeRoutes);
+
+// Job Description Management Routes
+app.use('/api/jobs', jobRoutes);
 
 // 404 Not Found Middleware
 app.use(notFoundHandler);

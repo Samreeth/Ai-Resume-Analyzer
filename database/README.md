@@ -12,7 +12,8 @@ database/
 │   ├── 001_create_tables.sql             # Tables, constraints, similarity bounds, and updated_at triggers
 │   ├── 002_create_indexes.sql            # Performance indexes and unique expression index for skills
 │   ├── 003_case_insensitive_user_email.sql # Case-insensitive email uniqueness with pre-check
-│   └── 004_add_resume_metadata.sql       # Resume file metadata, constraints, and composite user/uploaded_at index
+│   ├── 004_add_resume_metadata.sql       # Resume file metadata, constraints, and composite user/uploaded_at index
+│   └── 005_add_resume_processing_fields.sql # Plain-text extraction, processing audit columns, and claim token
 ├── seeds/                                # Idempotent reference datasets
 │   └── 001_initial_skills.sql            # Curated baseline skills with ON CONFLICT ((LOWER(skill_name)))
 ├── docker-init.sql                       # Lightweight extension initializer for Docker containers
@@ -75,6 +76,28 @@ Any `UPDATE` query will automatically advance `updated_at` without manual timest
 
   CREATE INDEX IF NOT EXISTS idx_resumes_user_uploaded ON resumes (user_id, uploaded_at DESC);
   ```
+- **Resumes Processing & Claim Token (Migration 005)**: Supports text extraction, processing status tracking, and claim identity:
+  ```sql
+  ALTER TABLE resumes
+      ADD COLUMN IF NOT EXISTS extracted_text TEXT,
+      ADD COLUMN IF NOT EXISTS processing_error_code VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS processing_error_message TEXT,
+      ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS processing_completed_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS processing_attempts INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS processing_token UUID;
+
+  ALTER TABLE resumes
+      ADD CONSTRAINT chk_resumes_processing_attempts CHECK (processing_attempts >= 0);
+
+  CREATE INDEX IF NOT EXISTS idx_resumes_status_stale
+      ON resumes (extraction_status, processing_started_at)
+      WHERE extraction_status = 'PROCESSING';
+
+  CREATE INDEX IF NOT EXISTS idx_resumes_processing_token
+      ON resumes (processing_token)
+      WHERE processing_token IS NOT NULL;
+  ```
 
 ---
 
@@ -124,7 +147,7 @@ npm run db:migrate
 # 2. Populate standard skills dictionary
 npm run db:seed
 
-# 3. Run automated 14-point schema, trigger, and migration verification test suite
+# 3. Run automated 15-point schema, trigger, and migration verification test suite
 npm run db:verify
 
 # 4. Run authentication test suite

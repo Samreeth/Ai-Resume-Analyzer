@@ -298,6 +298,51 @@ export const runVerification = async () => {
       }
     });
 
+    // 9c. Migration 005 Processing Fields Test: extracted_text, error columns, attempts, processing_token, and constraints
+    await test('Migration 005 Test: Resumes table supports processing fields, attempt bounds, and claim token', async () => {
+      const testToken = '12345678-1234-1234-1234-123456789abc';
+      const res = await client.query(`
+        INSERT INTO resumes (
+          user_id, file_name, file_path, extracted_text,
+          processing_error_code, processing_error_message,
+          processing_started_at, processing_completed_at,
+          processing_attempts, processing_token
+        ) VALUES (
+          $1, 'proc_test.pdf', 'resumes/proc_test.pdf', 'Sample extracted resume text',
+          'TEST_CODE', 'Test error message',
+          NOW(), NOW(), 1, $2
+        )
+        RETURNING resume_id, extracted_text, processing_attempts, processing_token, processing_error_code;
+      `, [testUserId, testToken]);
+      const procResumeId = res.rows[0].resume_id;
+
+      try {
+        if (res.rows[0].extracted_text !== 'Sample extracted resume text') {
+          throw new Error('extracted_text not saved/retrieved accurately');
+        }
+        if (res.rows[0].processing_attempts !== 1) {
+          throw new Error('processing_attempts not saved accurately');
+        }
+        if (res.rows[0].processing_token !== testToken) {
+          throw new Error('processing_token not saved accurately');
+        }
+        if (res.rows[0].processing_error_code !== 'TEST_CODE') {
+          throw new Error('processing_error_code not saved accurately');
+        }
+
+        // Bounds check: negative processing_attempts must fail
+        let threw = false;
+        try {
+          await client.query('UPDATE resumes SET processing_attempts = -1 WHERE resume_id = $1', [procResumeId]);
+        } catch (_) {
+          threw = true;
+        }
+        if (!threw) throw new Error('Expected chk_resumes_processing_attempts constraint violation for negative attempts');
+      } finally {
+        await client.query('DELETE FROM resumes WHERE resume_id = $1', [procResumeId]);
+      }
+    });
+
     // 10. Foreign Key Deletion Behavior: Preserves Analyses on Resume/Job Deletion
     await test('Foreign Key Test: Deleting resume sets resume_id = NULL but preserves analysis report', async () => {
       // Delete resume

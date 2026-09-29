@@ -49,7 +49,14 @@ CREATE TABLE IF NOT EXISTS resumes (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     extracted_data JSONB,
     extraction_status VARCHAR(50) NOT NULL DEFAULT 'PENDING'
-        CHECK (extraction_status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'))
+        CHECK (extraction_status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED')),
+    extracted_text TEXT,
+    processing_error_code VARCHAR(100),
+    processing_error_message TEXT,
+    processing_started_at TIMESTAMPTZ,
+    processing_completed_at TIMESTAMPTZ,
+    processing_attempts INTEGER NOT NULL DEFAULT 0 CHECK (processing_attempts >= 0),
+    processing_token UUID
 );
 
 CREATE OR REPLACE TRIGGER trg_resumes_updated_at
@@ -152,3 +159,10 @@ CREATE INDEX IF NOT EXISTS idx_analyses_user_history ON analyses (user_id, creat
 
 -- User Resume Upload History Sorting Compound Index
 CREATE INDEX IF NOT EXISTS idx_resumes_user_uploaded ON resumes (user_id, uploaded_at DESC);
+
+-- Stale Processing Recovery Partial Index (Migration 005)
+CREATE INDEX IF NOT EXISTS idx_resumes_status_stale ON resumes (extraction_status, processing_started_at) WHERE extraction_status = 'PROCESSING';
+
+-- Active Processing Claim Token Partial Index (Migration 005)
+CREATE INDEX IF NOT EXISTS idx_resumes_processing_token ON resumes (processing_token) WHERE processing_token IS NOT NULL;
+

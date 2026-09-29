@@ -6,36 +6,7 @@
  * Minimal valid PDF buffer matching PDF 1.4 specification
  */
 export const createTestPdf = () => {
-  const content = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>
-endobj
-4 0 obj
-<< /Length 28 >>
-stream
-BT /F1 12 Tf (Hello Resume) Tj ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000209 00000 n 
-trailer
-<< /Size 5 /Root 1 0 R >>
-startxref
-287
-%%EOF
-`;
-  return Buffer.from(content, 'utf8');
+  return createValidResumePdf('Hello Resume');
 };
 
 /**
@@ -154,6 +125,15 @@ export const createMissingContentTypesZip = () => {
 };
 
 /**
+ * ZIP with [Content_Types].xml but missing word/document.xml
+ */
+export const createMissingDocumentXmlZip = () => {
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+  });
+};
+
+/**
  * Corrupted / truncated ZIP buffer
  */
 export const createCorruptedZip = () => {
@@ -193,6 +173,214 @@ export const createZipWithPathTraversal = () => {
   });
 };
 
+/**
+ * Valid multi-line PDF buffer with realistic resume text (>20 characters)
+ */
+export const createValidResumePdf = (text = 'Jane Doe\nSenior Software Architect\nProficient in Node.js, TypeScript, PostgreSQL, and Distributed Systems.') => {
+  const cleanText = text.replace(/[\r\n]+/g, ' ');
+  const streamContent = `BT /F1 12 Tf (${cleanText}) Tj ET`;
+  const streamLen = Buffer.byteLength(streamContent);
+
+  const obj1 = '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+  const obj2 = '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+  const obj3 = '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n';
+  const obj4 = `4 0 obj\n<< /Length ${streamLen} >>\nstream\n${streamContent}\nendstream\nendobj\n`;
+  const obj5 = '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
+
+  const header = '%PDF-1.4\n';
+  const off1 = Buffer.byteLength(header);
+  const off2 = off1 + Buffer.byteLength(obj1);
+  const off3 = off2 + Buffer.byteLength(obj2);
+  const off4 = off3 + Buffer.byteLength(obj3);
+  const off5 = off4 + Buffer.byteLength(obj4);
+  const offXref = off5 + Buffer.byteLength(obj5);
+
+  const pad = (n) => String(n).padStart(10, '0');
+  const xref = 'xref\n0 6\n0000000000 65535 f \n' +
+    pad(off1) + ' 00000 n \n' +
+    pad(off2) + ' 00000 n \n' +
+    pad(off3) + ' 00000 n \n' +
+    pad(off4) + ' 00000 n \n' +
+    pad(off5) + ' 00000 n \n';
+  const trailer = `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${offXref}\n%%EOF\n`;
+
+  return Buffer.from(header + obj1 + obj2 + obj3 + obj4 + obj5 + xref + trailer, 'utf8');
+};
+
+/**
+ * Password-protected/encrypted PDF buffer
+ */
+export const createEncryptedPdf = () => {
+  const content = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 28 >>
+stream
+BT /F1 12 Tf (Top Secret Content) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Filter /Standard /V 1 /R 2 /O (12345678901234567890123456789012) /U (12345678901234567890123456789012) /P -4 >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000209 00000 n 
+0000000289 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Encrypt 5 0 R /ID [<0123456789abcdef0123456789abcdef> <0123456789abcdef0123456789abcdef>] >>
+startxref
+410
+%%EOF
+`;
+  return Buffer.from(content, 'utf8');
+};
+
+/**
+ * PDF with zero text characters (empty text stream)
+ */
+export const createEmptyTextPdf = () => {
+  const content = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 0 >>
+stream
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000209 00000 n 
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+287
+%%EOF
+`;
+  return Buffer.from(content, 'utf8');
+};
+
+/**
+ * Valid DOCX buffer with realistic paragraphs, runs, and tables (>20 characters)
+ */
+export const createValidResumeDocx = () => {
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>John Doe</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t>Senior Full Stack Engineer</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t>• 8+ years building enterprise Node.js and PostgreSQL web applications.</w:t></w:r>
+    </w:p>
+    <w:tbl>
+      <w:tr>
+        <w:tc><w:p><w:r><w:t>Skill</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:t>Years</w:t></w:r></w:p></w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc><w:p><w:r><w:t>JavaScript</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:t>8 Years</w:t></w:r></w:p></w:tc>
+      </w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>`;
+
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+    'word/document.xml': documentXml,
+  });
+};
+
+/**
+ * DOCX archive containing <!DOCTYPE / XXE payload
+ */
+export const createDocxWithXxe = () => {
+  const documentXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>&xxe;</w:t></w:r></w:p></w:body>
+</w:document>`;
+
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+    'word/document.xml': documentXml,
+  });
+};
+
+/**
+ * DOCX archive containing <!ENTITY declaration
+ */
+export const createDocxWithEntity = () => {
+  const documentXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY custom "SomeEntity">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>&custom;</w:t></w:r></w:p></w:body>
+</w:document>`;
+
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+    'word/document.xml': documentXml,
+  });
+};
+
+/**
+ * DOCX with empty body (0 readable characters)
+ */
+export const createEmptyTextDocx = () => {
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p/></w:body>
+</w:document>`;
+
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+    'word/document.xml': documentXml,
+  });
+};
+
+/**
+ * DOCX archive with word/document.xml of specified byte size
+ */
+export const createDocxWithXmlOfSize = (sizeInBytes = 2000) => {
+  const basePrefix = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>`;
+  const baseSuffix = `</w:t></w:r></w:p></w:body></w:document>`;
+  const paddingLength = Math.max(0, sizeInBytes - basePrefix.length - baseSuffix.length);
+  const padding = 'X'.repeat(paddingLength);
+  const documentXml = `${basePrefix}${padding}${baseSuffix}`;
+
+  return createTestZip({
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+    'word/document.xml': documentXml,
+  });
+};
+
 export default {
   createTestPdf,
   createTestZip,
@@ -200,8 +388,17 @@ export default {
   createInvalidDocxWithDocument2,
   createGenericZip,
   createMissingContentTypesZip,
+  createMissingDocumentXmlZip,
   createCorruptedZip,
   createZipWithManyEntries,
   createZipWithLongName,
   createZipWithPathTraversal,
+  createValidResumePdf,
+  createEncryptedPdf,
+  createEmptyTextPdf,
+  createValidResumeDocx,
+  createDocxWithXxe,
+  createDocxWithEntity,
+  createEmptyTextDocx,
+  createDocxWithXmlOfSize,
 };

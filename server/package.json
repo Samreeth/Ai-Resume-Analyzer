@@ -12,7 +12,9 @@
     "db:verify": "node src/database/verify.mjs",
     "test:auth": "node test/auth.test.mjs",
     "test:e2e": "node test/live_e2e_verification.mjs",
-    "test:resume": "node test/resume.test.mjs"
+    "test:resume": "node test/resume.test.mjs",
+    "test:extractor": "node test/extractor.test.mjs",
+    "test:processing": "node test/processing.test.mjs"
   },
   "keywords": [
     "resume",
@@ -29,10 +31,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "fast-xml-parser": "^5.11.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.4.0",
     "pg": "^8.13.3",
+    "unpdf": "^1.8.1",
     "yauzl": "^3.4.0",
     "zod": "^3.24.2"
   },

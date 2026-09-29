@@ -107,9 +107,32 @@ export const fileExists = async (relativePath) => {
   }
 };
 
+/**
+ * Read stored file into memory Buffer with path-jail validation
+ *
+ * @param {string} relativePath (e.g. "resumes/<uuid>.<ext>")
+ * @returns {Promise<Buffer>}
+ * @throws {Error} If path is invalid, traverses jail, or file cannot be read
+ */
+export const readFileBuffer = async (relativePath) => {
+  const resolvedPath = resolveSecurePath(relativePath);
+  try {
+    return await fs.promises.readFile(resolvedPath);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      const notFoundErr = new Error('File not found in storage');
+      notFoundErr.code = 'STORAGE_READ_ERROR';
+      notFoundErr.statusCode = 404;
+      throw notFoundErr;
+    }
+    throw err;
+  }
+};
+
 export default {
   ensureStorageDir,
   saveFileAtomic,
   deleteFile,
   fileExists,
+  readFileBuffer,
 };
