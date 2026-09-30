@@ -12,19 +12,9 @@ import ResumesPage from './pages/resumes/ResumesPage.jsx';
 import ResumeDetailPage from './pages/resumes/ResumeDetailPage.jsx';
 import JobsPage from './pages/jobs/JobsPage.jsx';
 import JobDetailPage from './pages/jobs/JobDetailPage.jsx';
-
-// Stage placeholders for future modules (implemented in Stages 4-5)
-const PlaceholderPage = ({ title, stage }) => (
-  <div className="card">
-    <div className="card-header">
-      <h2 className="card-title">{title}</h2>
-      <span className="badge badge-processing">Stage {stage} Planned</span>
-    </div>
-    <p style={{ color: 'var(--text-secondary)' }}>
-      Module active in development pipeline. This view will be implemented in Stage {stage}.
-    </p>
-  </div>
-);
+import AnalysesPage from './pages/analysis/AnalysesPage.jsx';
+import CreateAnalysisPage from './pages/analysis/CreateAnalysisPage.jsx';
+import AnalysisDetailPage from './pages/analysis/AnalysisDetailPage.jsx';
 
 export const App = () => {
   return (
@@ -47,9 +37,9 @@ export const App = () => {
                 <Route path="/resumes/:resumeId" element={<ResumeDetailPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-                <Route path="/analyses" element={<PlaceholderPage title="Historical Analyses" stage="5" />} />
-                <Route path="/analyses/new" element={<PlaceholderPage title="New Compatibility Match" stage="5" />} />
-                <Route path="/analyses/:analysisId" element={<PlaceholderPage title="Analysis & Recommendations Report" stage="5" />} />
+                <Route path="/analyses" element={<AnalysesPage />} />
+                <Route path="/analyses/new" element={<CreateAnalysisPage />} />
+                <Route path="/analyses/:analysisId" element={<AnalysisDetailPage />} />
               </Route>
             </Route>
 
