@@ -8,8 +8,10 @@ import AppLayout from './layouts/AppLayout.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import ResumesPage from './pages/resumes/ResumesPage.jsx';
+import ResumeDetailPage from './pages/resumes/ResumeDetailPage.jsx';
 
-// Stage placeholders for future modules (implemented in Stages 3-5)
+// Stage placeholders for future modules (implemented in Stages 4-5)
 const PlaceholderPage = ({ title, stage }) => (
   <div className="card">
     <div className="card-header">
@@ -39,8 +41,8 @@ export const App = () => {
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/resumes" element={<PlaceholderPage title="Resume Management" stage="3" />} />
-                <Route path="/resumes/:resumeId" element={<PlaceholderPage title="Resume Details" stage="3" />} />
+                <Route path="/resumes" element={<ResumesPage />} />
+                <Route path="/resumes/:resumeId" element={<ResumeDetailPage />} />
                 <Route path="/jobs" element={<PlaceholderPage title="Job Description Management" stage="4" />} />
                 <Route path="/jobs/:jobId" element={<PlaceholderPage title="Job Details" stage="4" />} />
                 <Route path="/analyses" element={<PlaceholderPage title="Historical Analyses" stage="5" />} />
