@@ -80,6 +80,15 @@ export const jobApi = {
     const res = await apiClient.post(`/jobs/${jobId}/extract`);
     return res.data;
   },
+
+  /**
+   * Alias for extractJobSkills
+   * POST /api/jobs/:jobId/extract
+   */
+  extractJob: async (jobId) => {
+    const res = await apiClient.post(`/jobs/${jobId}/extract`);
+    return res.data;
+  },
 };
 
 export default jobApi;

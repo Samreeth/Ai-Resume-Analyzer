@@ -10,6 +10,8 @@ import RegisterPage from './pages/auth/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ResumesPage from './pages/resumes/ResumesPage.jsx';
 import ResumeDetailPage from './pages/resumes/ResumeDetailPage.jsx';
+import JobsPage from './pages/jobs/JobsPage.jsx';
+import JobDetailPage from './pages/jobs/JobDetailPage.jsx';
 
 // Stage placeholders for future modules (implemented in Stages 4-5)
 const PlaceholderPage = ({ title, stage }) => (
@@ -43,8 +45,8 @@ export const App = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/resumes" element={<ResumesPage />} />
                 <Route path="/resumes/:resumeId" element={<ResumeDetailPage />} />
-                <Route path="/jobs" element={<PlaceholderPage title="Job Description Management" stage="4" />} />
-                <Route path="/jobs/:jobId" element={<PlaceholderPage title="Job Details" stage="4" />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs/:jobId" element={<JobDetailPage />} />
                 <Route path="/analyses" element={<PlaceholderPage title="Historical Analyses" stage="5" />} />
                 <Route path="/analyses/new" element={<PlaceholderPage title="New Compatibility Match" stage="5" />} />
                 <Route path="/analyses/:analysisId" element={<PlaceholderPage title="Analysis & Recommendations Report" stage="5" />} />
