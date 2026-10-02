@@ -1,6 +1,8 @@
 import React from 'react';
 import Button from '../common/Button.jsx';
 import Spinner from '../common/Spinner.jsx';
+import Badge from '../common/Badge.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Prioritized Actionable Recommendations Component
@@ -27,32 +29,29 @@ export const Recommendations = ({
   error = '',
   onRetry,
 }) => {
-  const getPriorityStyle = (priority) => {
+  const getPriorityVariant = (priority) => {
     switch (priority) {
       case 'HIGH':
-        return {
-          bg: 'var(--danger-bg)',
-          border: 'var(--danger-border)',
-          color: 'var(--danger)',
-        };
+        return 'high';
       case 'MEDIUM':
-        return {
-          bg: 'var(--warning-bg)',
-          border: 'var(--warning-border)',
-          color: 'var(--warning)',
-        };
+        return 'medium';
       case 'LOW':
-        return {
-          bg: 'var(--info-bg)',
-          border: 'var(--info-border)',
-          color: 'var(--info)',
-        };
+        return 'low';
       default:
-        return {
-          bg: 'var(--bg-tertiary)',
-          border: 'var(--border-subtle)',
-          color: 'var(--text-secondary)',
-        };
+        return 'neutral';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'HIGH':
+        return 'var(--danger)';
+      case 'MEDIUM':
+        return 'var(--warning)';
+      case 'LOW':
+        return 'var(--info)';
+      default:
+        return 'var(--accent-primary)';
     }
   };
 
@@ -88,8 +87,9 @@ export const Recommendations = ({
         }}
       >
         <div>
-          <h3 className="card-title" style={{ margin: 0 }}>
-            Actionable Recommendations
+          <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Icon name="sparkles" size={18} style={{ color: 'var(--accent-primary)' }} />
+            <span>Actionable Recommendations</span>
           </h3>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
             Prioritized heuristics for addressing skill gaps, strengthening impact, and enhancing resume structure
@@ -111,7 +111,7 @@ export const Recommendations = ({
               value={selectedPriority}
               onChange={(e) => onPriorityChange && onPriorityChange(e.target.value)}
               className="input-field"
-              style={{ padding: '0.3rem 0.6rem', fontSize: 'var(--text-xs)', width: 'auto' }}
+              style={{ padding: '0.35rem 0.65rem', fontSize: 'var(--text-xs)', width: 'auto' }}
               data-testid="filter-priority-select"
             >
               <option value="ALL">All Priorities</option>
@@ -134,7 +134,7 @@ export const Recommendations = ({
               value={selectedCategory}
               onChange={(e) => onCategoryChange && onCategoryChange(e.target.value)}
               className="input-field"
-              style={{ padding: '0.3rem 0.6rem', fontSize: 'var(--text-xs)', width: 'auto' }}
+              style={{ padding: '0.35rem 0.65rem', fontSize: 'var(--text-xs)', width: 'auto' }}
               data-testid="filter-category-select"
             >
               <option value="ALL">All Categories</option>
@@ -195,8 +195,8 @@ export const Recommendations = ({
             <div
               style={{
                 textAlign: 'center',
-                padding: '2rem 1rem',
-                backgroundColor: 'var(--bg-secondary)',
+                padding: '2.5rem 1rem',
+                backgroundColor: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-md)',
                 color: 'var(--text-muted)',
                 fontSize: 'var(--text-sm)',
@@ -208,47 +208,39 @@ export const Recommendations = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               {recommendations.map((rec) => {
-                const pStyle = getPriorityStyle(rec.priority);
+                const priorityVariant = getPriorityVariant(rec.priority);
+                const accentColor = getPriorityColor(rec.priority);
+
                 return (
                   <div
                     key={rec.id}
                     style={{
-                      backgroundColor: 'var(--bg-secondary)',
+                      backgroundColor: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '1.25rem',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '1.25rem 1.5rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.625rem',
+                      gap: '0.75rem',
+                      transition: 'border-color var(--transition-fast)',
                     }}
                     data-testid={`recommendation-item-${rec.id}`}
                   >
                     {/* Header Badges */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 700,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: 'var(--radius-full)',
-                          backgroundColor: pStyle.bg,
-                          borderColor: pStyle.border,
-                          borderWidth: '1px',
-                          borderStyle: 'solid',
-                          color: pStyle.color,
-                        }}
-                      >
+                      <Badge variant={priorityVariant}>
                         {rec.priority} PRIORITY
-                      </span>
+                      </Badge>
 
                       <span
                         style={{
-                          fontSize: 'var(--text-xs)',
+                          fontSize: '0.7rem',
                           fontWeight: 600,
                           padding: '0.15rem 0.5rem',
                           borderRadius: 'var(--radius-sm)',
-                          backgroundColor: 'var(--bg-tertiary)',
+                          backgroundColor: 'var(--bg-elevated)',
                           color: 'var(--text-secondary)',
+                          border: '1px solid var(--border-subtle)',
                         }}
                       >
                         {getCategoryLabel(rec.category)}
@@ -273,7 +265,7 @@ export const Recommendations = ({
                         fontSize: 'var(--text-sm)',
                         color: 'var(--text-secondary)',
                         margin: 0,
-                        lineHeight: 1.5,
+                        lineHeight: 1.6,
                       }}
                     >
                       {rec.message}
@@ -282,9 +274,9 @@ export const Recommendations = ({
                     {/* Action Step */}
                     <div
                       style={{
-                        backgroundColor: 'var(--bg-tertiary)',
-                        borderLeft: `3px solid ${pStyle.color}`,
-                        padding: '0.625rem 0.875rem',
+                        backgroundColor: 'var(--bg-elevated)',
+                        borderLeft: `3px solid ${accentColor}`,
+                        padding: '0.75rem 1rem',
                         borderRadius: 'var(--radius-sm)',
                         marginTop: '0.25rem',
                       }}
@@ -297,6 +289,7 @@ export const Recommendations = ({
                           color: 'var(--text-primary)',
                           display: 'block',
                           marginBottom: '0.25rem',
+                          letterSpacing: '0.04em',
                         }}
                       >
                         Recommended Action:
@@ -323,16 +316,20 @@ export const Recommendations = ({
             <div
               style={{
                 marginTop: '1rem',
-                paddingTop: '0.75rem',
+                paddingTop: '0.875rem',
                 borderTop: '1px solid var(--border-subtle)',
                 fontSize: 'var(--text-xs)',
                 color: 'var(--text-muted)',
-                lineHeight: 1.4,
+                lineHeight: 1.5,
                 fontStyle: 'italic',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
               }}
               data-testid="recommendations-disclaimer"
             >
-              {disclaimer}
+              <Icon name="sparkles" size={14} style={{ color: 'var(--text-muted)' }} />
+              <span>{disclaimer}</span>
             </div>
           )}
         </div>

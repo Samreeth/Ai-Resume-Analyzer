@@ -7,6 +7,7 @@ import DeleteAnalysisDialog from '../../components/analysis/DeleteAnalysisDialog
 import Spinner from '../../components/common/Spinner.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Historical Analyses List Page
@@ -121,7 +122,8 @@ export const AnalysesPage = () => {
         </div>
 
         <Link to="/analyses/new" className="btn btn-primary" data-testid="new-analysis-cta">
-          New Analysis
+          <Icon name="sparkles" size={16} />
+          <span>New Analysis</span>
         </Link>
       </div>
 
@@ -159,10 +161,10 @@ export const AnalysesPage = () => {
           }}
           data-testid="analyses-error"
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Unable to load analyses
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem', color: 'var(--text-secondary)' }}>
             {error}
           </p>
           <Button
@@ -178,7 +180,7 @@ export const AnalysesPage = () => {
       {/* Empty State */}
       {!isLoading && !error && analyses.length === 0 && (
         <EmptyState
-          icon="📊"
+          icon={<Icon name="analyses" size={32} />}
           title="No compatibility analyses yet"
           description="Evaluate a candidate resume against target job description criteria to generate match scores, detect skill gaps, and view actionable recommendations."
           action={
@@ -218,7 +220,7 @@ export const AnalysesPage = () => {
               }}
               data-testid="analyses-pagination"
             >
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} analyses
@@ -234,7 +236,7 @@ export const AnalysesPage = () => {
                 >
                   &larr; Previous
                 </Button>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }} className="tabular-nums">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button

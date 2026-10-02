@@ -6,6 +6,7 @@ import analysisApi from '../../api/analysis.api.js';
 import { useToast } from '../../hooks/useToast.js';
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * New Compatibility Analysis Page
@@ -96,14 +97,15 @@ export const CreateAnalysisPage = () => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.35rem',
             color: 'var(--text-secondary)',
             fontSize: 'var(--text-sm)',
             textDecoration: 'none',
           }}
           data-testid="back-to-analyses-link"
         >
-          <span>&larr;</span> Back to Analyses
+          <Icon name="arrow-left" size={14} />
+          <span>Back to Analyses</span>
         </Link>
       </div>
 
@@ -148,9 +150,11 @@ export const CreateAnalysisPage = () => {
             padding: '1.5rem',
             borderRadius: 'var(--radius-lg)',
             textAlign: 'center',
+            maxWidth: '560px',
+            margin: '0 auto',
           }}
         >
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1rem' }}>{optionsError}</p>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{optionsError}</p>
           <Button variant="secondary" onClick={() => window.location.reload()}>
             Retry
           </Button>
@@ -169,14 +173,18 @@ export const CreateAnalysisPage = () => {
                   backgroundColor: 'var(--danger-bg)',
                   border: '1px solid var(--danger-border)',
                   color: 'var(--danger)',
-                  padding: '0.75rem',
+                  padding: '0.75rem 1rem',
                   borderRadius: 'var(--radius-md)',
                   fontSize: 'var(--text-sm)',
                   marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
                 }}
                 data-testid="create-analysis-error"
               >
-                {submitError}
+                <Icon name="alert" size={16} />
+                <span>{submitError}</span>
               </div>
             )}
 
@@ -188,14 +196,18 @@ export const CreateAnalysisPage = () => {
                   backgroundColor: 'var(--danger-bg)',
                   border: '1px solid var(--danger-border)',
                   color: 'var(--danger)',
-                  padding: '0.75rem',
+                  padding: '0.75rem 1rem',
                   borderRadius: 'var(--radius-md)',
                   fontSize: 'var(--text-sm)',
                   marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
                 }}
                 data-testid="create-analysis-validation-error"
               >
-                {validationError}
+                <Icon name="alert" size={16} />
+                <span>{validationError}</span>
               </div>
             )}
 
@@ -289,7 +301,8 @@ export const CreateAnalysisPage = () => {
                 disabled={isSubmitting || resumes.length === 0 || jobs.length === 0}
                 data-testid="start-analysis-btn"
               >
-                Run Match Analysis
+                <Icon name="sparkles" size={14} />
+                <span>Run Match Analysis</span>
               </Button>
             </div>
           </form>

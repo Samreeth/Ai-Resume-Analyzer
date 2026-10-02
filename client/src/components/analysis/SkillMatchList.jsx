@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../common/Button.jsx';
+import Badge from '../common/Badge.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Itemized breakdown of evaluated skills grouped by requirement type and match status
@@ -28,71 +30,64 @@ export const SkillMatchList = ({ skills = [] }) => {
 
   const renderSkillItem = (skill) => {
     const isMatched = skill.status === 'MATCHED';
-    const statusBg = isMatched ? 'var(--success-bg)' : 'var(--danger-bg)';
-    const statusBorder = isMatched ? 'var(--success-border)' : 'var(--danger-border)';
-    const statusColor = isMatched ? 'var(--success)' : 'var(--danger)';
 
     return (
       <div
         key={skill.skill_id || skill.skill_name}
         style={{
-          backgroundColor: 'var(--bg-secondary)',
+          backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          padding: '1rem',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1.25rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
+          gap: '0.625rem',
+          transition: 'border-color var(--transition-fast)',
         }}
         data-testid={`skill-item-${skill.skill_id || skill.skill_name}`}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
           <div>
-            <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {skill.skill_name}
-            </span>
-            {skill.category && (
-              <span
-                style={{
-                  marginLeft: '0.5rem',
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--text-muted)',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  padding: '0.125rem 0.375rem',
-                  borderRadius: 'var(--radius-sm)',
-                }}
-              >
-                {skill.category}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {skill.skill_name}
               </span>
-            )}
+              {skill.category && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    padding: '0.125rem 0.4rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  {skill.category}
+                </span>
+              )}
+            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {isMatched && skill.similarity_score !== undefined && (
               <span
+                className="tabular-nums"
                 style={{
                   fontSize: 'var(--text-xs)',
                   color: 'var(--text-muted)',
+                  fontWeight: 500,
                 }}
               >
                 Score: {Number(skill.similarity_score).toFixed(0)}%
               </span>
             )}
-            <span
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 700,
-                padding: '0.2rem 0.5rem',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: statusBg,
-                borderColor: statusBorder,
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                color: statusColor,
-              }}
+            <Badge
+              variant={isMatched ? 'matched' : 'missing'}
+              icon={isMatched ? <Icon name="check" size={12} /> : <Icon name="close" size={12} />}
             >
               {skill.status}
-            </span>
+            </Badge>
           </div>
         </div>
 
@@ -104,9 +99,9 @@ export const SkillMatchList = ({ skills = [] }) => {
               color: 'var(--text-secondary)',
               margin: '0.25rem 0 0 0',
               fontStyle: 'italic',
-              lineHeight: 1.4,
-              backgroundColor: 'var(--bg-tertiary)',
-              padding: '0.5rem 0.75rem',
+              lineHeight: 1.5,
+              backgroundColor: 'var(--bg-elevated)',
+              padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius-sm)',
               borderLeft: `3px solid ${isMatched ? 'var(--success)' : 'var(--border-muted)'}`,
             }}
@@ -135,8 +130,9 @@ export const SkillMatchList = ({ skills = [] }) => {
         }}
       >
         <div>
-          <h3 className="card-title" style={{ margin: 0 }}>
-            Skill Matching & Verification
+          <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Icon name="check-circle" size={18} style={{ color: 'var(--accent-primary)' }} />
+            <span>Skill Matching & Verification</span>
           </h3>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
             Deterministic pattern matches and evidence extracted from candidate resume against job requirements
@@ -144,7 +140,7 @@ export const SkillMatchList = ({ skills = [] }) => {
         </div>
 
         {/* Filter Toolbar */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Button
             type="button"
             variant={statusFilter === 'ALL' ? 'primary' : 'secondary'}
@@ -176,11 +172,11 @@ export const SkillMatchList = ({ skills = [] }) => {
       </div>
 
       {skills.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
           No skills were evaluated for this analysis.
         </div>
       ) : filteredSkills.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
           No skills match the selected filter ({statusFilter.toLowerCase()}).
         </div>
       ) : (
@@ -201,25 +197,16 @@ export const SkillMatchList = ({ skills = [] }) => {
                     fontSize: 'var(--text-sm)',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    letterSpacing: '0.06em',
                     color: 'var(--danger)',
                     margin: 0,
                   }}
                 >
                   Required Skills
                 </h4>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    backgroundColor: 'var(--danger-bg)',
-                    color: 'var(--danger)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 600,
-                  }}
-                >
+                <Badge variant="required" size="sm">
                   {requiredSkills.length}
-                </span>
+                </Badge>
               </div>
 
               <div
@@ -251,25 +238,16 @@ export const SkillMatchList = ({ skills = [] }) => {
                     fontSize: 'var(--text-sm)',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    letterSpacing: '0.06em',
                     color: 'var(--info)',
                     margin: 0,
                   }}
                 >
                   Preferred Skills
                 </h4>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    backgroundColor: 'var(--info-bg)',
-                    color: 'var(--info)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 600,
-                  }}
-                >
+                <Badge variant="preferred" size="sm">
                   {preferredSkills.length}
-                </span>
+                </Badge>
               </div>
 
               <div

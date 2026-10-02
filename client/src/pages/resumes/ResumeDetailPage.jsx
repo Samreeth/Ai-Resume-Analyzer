@@ -6,6 +6,7 @@ import ResumeStatusBadge from '../../components/resumes/ResumeStatusBadge.jsx';
 import DeleteResumeDialog from '../../components/resumes/DeleteResumeDialog.jsx';
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Resume Detail Page
@@ -106,7 +107,7 @@ export const ResumeDetailPage = () => {
           setIsProcessing(false);
           toast.info('Status polling timed out. Please refresh or retry.');
         }
-      } catch (err) {
+      } catch (_) {
         stopPolling();
         setIsProcessing(false);
       }
@@ -228,15 +229,20 @@ export const ResumeDetailPage = () => {
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
-            padding: '1.5rem',
+            padding: '2rem',
             borderRadius: 'var(--radius-lg)',
             textAlign: 'center',
+            maxWidth: '560px',
+            margin: '0 auto',
           }}
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+            <Icon name="alert" size={28} />
+          </div>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Resume Not Found or Inaccessible
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
             {error || 'Unable to retrieve resume information.'}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
@@ -258,12 +264,19 @@ export const ResumeDetailPage = () => {
     statusInfo?.canRetry ??
     (currentStatus !== 'COMPLETED' && (statusInfo?.processingAttempts ?? 0) < 3);
 
+  // Workflow visual steps:
+  // 1: Upload (Complete)
+  // 2: Text Extraction (Pending / Processing / Completed / Failed)
+  // 3: Available for Analysis (Visual derivation: complete if extraction is COMPLETED)
+  const isExtracted = currentStatus === 'COMPLETED';
+
   return (
     <div data-testid="resume-detail-page" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Breadcrumb & Navigation */}
+      {/* Breadcrumb Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--text-sm)' }}>
-        <Link to="/resumes" style={{ color: 'var(--text-secondary)' }}>
-          Resumes
+        <Link to="/resumes" style={{ color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Icon name="resume" size={14} />
+          <span>Resumes</span>
         </Link>
         <span style={{ color: 'var(--text-muted)' }}>/</span>
         <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
@@ -271,7 +284,7 @@ export const ResumeDetailPage = () => {
         </span>
       </div>
 
-      {/* Header Banner */}
+      {/* Header Banner Card */}
       <div
         className="card"
         style={{
@@ -279,17 +292,18 @@ export const ResumeDetailPage = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '1.25rem',
         }}
       >
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
             <h1
               style={{
                 fontSize: 'var(--text-xl)',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 wordBreak: 'break-word',
+                margin: 0,
               }}
               data-testid="resume-filename-heading"
             >
@@ -298,13 +312,13 @@ export const ResumeDetailPage = () => {
             <ResumeStatusBadge status={currentStatus} />
           </div>
 
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0 }} className="tabular-nums">
             Uploaded {formatDate(resume.uploaded_at)} &bull; Size: {formatFileSize(resume.file_size)}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {canRetry && currentStatus !== 'PROCESSING' && (
             <Button
               type="button"
@@ -314,7 +328,8 @@ export const ResumeDetailPage = () => {
               disabled={isProcessing}
               data-testid="trigger-process-btn"
             >
-              {currentStatus === 'FAILED' ? 'Retry Extraction' : 'Extract Skills & Text'}
+              <Icon name="refresh" size={14} />
+              <span>{currentStatus === 'FAILED' ? 'Retry Extraction' : 'Extract Skills & Text'}</span>
             </Button>
           )}
 
@@ -331,8 +346,137 @@ export const ResumeDetailPage = () => {
             onClick={() => setShowDeleteDialog(true)}
             data-testid="delete-resume-btn"
           >
-            Delete Resume
+            <Icon name="trash" size={14} />
+            <span>Delete Resume</span>
           </Button>
+        </div>
+      </div>
+
+      {/* Extraction Lifecycle Stepper (Visual workflow derived from real API state) */}
+      <div
+        className="card"
+        style={{
+          padding: '1.25rem 1.5rem',
+          backgroundColor: 'var(--bg-surface)',
+        }}
+      >
+        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+          Extraction Lifecycle
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', flexWrap: 'wrap', gap: '1rem' }}>
+          {/* Step 1: Upload */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div
+              style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--success-bg)',
+                border: '1px solid var(--success-border)',
+                color: 'var(--success)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="check" size={14} />
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Document Upload
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                Stored in encrypted vault
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)', minWidth: '30px' }} />
+
+          {/* Step 2: Text Extraction */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div
+              style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: isExtracted
+                  ? 'var(--success-bg)'
+                  : currentStatus === 'FAILED'
+                  ? 'var(--danger-bg)'
+                  : currentStatus === 'PROCESSING'
+                  ? 'var(--info-bg)'
+                  : 'var(--warning-bg)',
+                border: `1px solid ${
+                  isExtracted
+                    ? 'var(--success-border)'
+                    : currentStatus === 'FAILED'
+                    ? 'var(--danger-border)'
+                    : currentStatus === 'PROCESSING'
+                    ? 'var(--info-border)'
+                    : 'var(--warning-border)'
+                }`,
+                color: isExtracted
+                  ? 'var(--success)'
+                  : currentStatus === 'FAILED'
+                  ? 'var(--danger)'
+                  : currentStatus === 'PROCESSING'
+                  ? 'var(--info)'
+                  : 'var(--warning)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isExtracted ? (
+                <Icon name="check" size={14} />
+              ) : currentStatus === 'PROCESSING' ? (
+                <Spinner size="sm" />
+              ) : currentStatus === 'FAILED' ? (
+                <Icon name="close" size={14} />
+              ) : (
+                <Icon name="refresh" size={14} />
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Text Extraction
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                {currentStatus}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)', minWidth: '30px' }} />
+
+          {/* Step 3: Available for Analysis */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div
+              style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: isExtracted ? 'var(--accent-muted)' : 'var(--bg-elevated)',
+                border: `1px solid ${isExtracted ? 'rgba(99, 102, 241, 0.4)' : 'var(--border-subtle)'}`,
+                color: isExtracted ? 'var(--border-focus)' : 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="chart" size={14} />
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: isExtracted ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                Available for Analysis
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                {isExtracted ? 'Ready for job matching' : 'Awaiting extraction'}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -347,10 +491,16 @@ export const ResumeDetailPage = () => {
             padding: '1rem',
             borderRadius: 'var(--radius-md)',
             fontSize: 'var(--text-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
           }}
           data-testid="process-error-alert"
         >
-          <strong>Processing Error:</strong> {processError}
+          <Icon name="alert" size={18} />
+          <div>
+            <strong>Processing Error:</strong> {processError}
+          </div>
         </div>
       )}
 
@@ -372,28 +522,28 @@ export const ResumeDetailPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>MIME Type</span>
-              <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)', fontSize: 'var(--text-xs)' }} data-testid="meta-mimetype">
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontSize: 'var(--text-xs)' }} data-testid="meta-mimetype">
                 {resume.mime_type}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>File Size</span>
-              <span style={{ color: 'var(--text-primary)' }} data-testid="meta-filesize">
+              <span style={{ color: 'var(--text-primary)' }} className="tabular-nums" data-testid="meta-filesize">
                 {formatFileSize(resume.file_size)}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>SHA-256 Hash</span>
-              <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }} title={resume.file_hash}>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }} title={resume.file_hash}>
                 {resume.file_hash ? `${resume.file_hash.substring(0, 16)}...` : '—'}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-muted)' }}>Uploaded At</span>
-              <span style={{ color: 'var(--text-primary)' }}>
+              <span style={{ color: 'var(--text-primary)' }} className="tabular-nums">
                 {formatDate(resume.uploaded_at)}
               </span>
             </div>
@@ -416,7 +566,7 @@ export const ResumeDetailPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>Processing Attempts</span>
-              <span style={{ color: 'var(--text-primary)', fontWeight: 500 }} data-testid="meta-attempts">
+              <span style={{ color: 'var(--text-primary)', fontWeight: 500 }} className="tabular-nums" data-testid="meta-attempts">
                 {statusInfo?.processingAttempts ?? 0} / 3 allowed
               </span>
             </div>
@@ -436,14 +586,14 @@ export const ResumeDetailPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>Started At</span>
-              <span style={{ color: 'var(--text-secondary)' }}>
+              <span style={{ color: 'var(--text-secondary)' }} className="tabular-nums">
                 {formatDate(statusInfo?.processingStartedAt)}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-muted)' }}>Completed At</span>
-              <span style={{ color: 'var(--text-secondary)' }}>
+              <span style={{ color: 'var(--text-secondary)' }} className="tabular-nums">
                 {formatDate(statusInfo?.processingCompletedAt)}
               </span>
             </div>
@@ -457,12 +607,12 @@ export const ResumeDetailPage = () => {
           className="card"
           style={{
             borderColor: 'var(--danger-border)',
-            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            backgroundColor: 'var(--danger-bg)',
           }}
           data-testid="failure-diagnostic-card"
         >
           <div className="card-header">
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--danger)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--danger)', margin: 0 }}>
               Failure Diagnostics
             </h3>
             {statusInfo.processingErrorCode && (
@@ -473,7 +623,7 @@ export const ResumeDetailPage = () => {
             {statusInfo.processingErrorMessage}
           </p>
           {canRetry && (
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.5rem' }} className="tabular-nums">
               You may retry extraction using the button above. (Remaining attempts:{' '}
               {3 - (statusInfo.processingAttempts || 0)})
             </p>
@@ -497,15 +647,15 @@ export const ResumeDetailPage = () => {
             style={{
               maxHeight: '320px',
               overflowY: 'auto',
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
               borderRadius: 'var(--radius-md)',
               padding: '1rem',
               fontSize: 'var(--text-xs)',
               lineHeight: 1.6,
               color: 'var(--text-primary)',
               whiteSpace: 'pre-wrap',
-              fontFamily: 'monospace',
+              fontFamily: 'var(--font-mono)',
             }}
           >
             {sessionExtractedText}
@@ -517,21 +667,32 @@ export const ResumeDetailPage = () => {
       {!sessionExtractedText && (
         <div
           style={{
-            padding: '1rem',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'var(--bg-secondary)',
+            padding: '1.25rem',
+            borderRadius: 'var(--radius-lg)',
+            backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
             fontSize: 'var(--text-xs)',
             color: 'var(--text-muted)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
+            gap: '0.875rem',
           }}
           data-testid="text-disclosure-banner"
         >
-          <span style={{ fontSize: '1.25rem' }} aria-hidden="true">🔒</span>
+          <div
+            style={{
+              color: 'var(--accent-primary)',
+              backgroundColor: 'var(--accent-muted)',
+              padding: '0.5rem',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+            }}
+            aria-hidden="true"
+          >
+            <Icon name="lock" size={20} />
+          </div>
           <div>
-            <strong>Private Storage Policy:</strong> Resume text is stored in an encrypted vault outside the public web root. For data privacy and bandwidth security, the backend detail endpoint exposes metadata and extraction status rather than raw document text.
+            <strong style={{ color: 'var(--text-primary)' }}>Private Storage Policy:</strong> Resume text is stored in an encrypted vault outside the public web root. For data privacy and bandwidth security, the backend detail endpoint exposes metadata and extraction status rather than raw document text.
           </div>
         </div>
       )}

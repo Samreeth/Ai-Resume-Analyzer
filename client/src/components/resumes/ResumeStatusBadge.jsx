@@ -1,8 +1,9 @@
 import React from 'react';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Reusable Resume Status Badge
- * Maps backend extraction lifecycle statuses to visual badges.
+ * Maps backend extraction lifecycle statuses to visual badges with native SVG icons.
  *
  * @param {object} props
  * @param {'PENDING'|'PROCESSING'|'COMPLETED'|'FAILED'} props.status
@@ -19,7 +20,7 @@ export const ResumeStatusBadge = ({ status, className = '' }) => {
     case 'COMPLETED':
       badgeClass = 'badge badge-completed';
       label = 'Completed';
-      icon = '✓';
+      icon = <Icon name="check" size={12} />;
       break;
     case 'PROCESSING':
       badgeClass = 'badge badge-processing';
@@ -27,7 +28,7 @@ export const ResumeStatusBadge = ({ status, className = '' }) => {
       icon = (
         <span
           className="spinner"
-          style={{ width: '0.625rem', height: '0.625rem', borderWidth: '1px' }}
+          style={{ width: '0.625rem', height: '0.625rem', borderWidth: '1.5px' }}
           aria-hidden="true"
         />
       );
@@ -35,15 +36,15 @@ export const ResumeStatusBadge = ({ status, className = '' }) => {
     case 'PENDING':
       badgeClass = 'badge badge-pending';
       label = 'Pending';
-      icon = '⏳';
+      icon = <Icon name="refresh" size={12} />;
       break;
     case 'FAILED':
       badgeClass = 'badge badge-failed';
       label = 'Failed';
-      icon = '✕';
+      icon = <Icon name="close" size={12} />;
       break;
     default:
-      badgeClass = 'badge';
+      badgeClass = 'badge badge-neutral';
       label = status || 'Unknown';
       break;
   }

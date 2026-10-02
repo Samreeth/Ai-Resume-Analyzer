@@ -7,6 +7,7 @@ import DeleteResumeDialog from '../../components/resumes/DeleteResumeDialog.jsx'
 import Spinner from '../../components/common/Spinner.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Resumes List Page
@@ -60,7 +61,7 @@ export const ResumesPage = () => {
     fetchResumes(pagination.page);
   }, [fetchResumes, pagination.page]);
 
-  const handleUploadSuccess = (newResume) => {
+  const handleUploadSuccess = () => {
     setShowUpload(false);
     fetchResumes(1);
   };
@@ -110,7 +111,7 @@ export const ResumesPage = () => {
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Resume Management
           </h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -124,13 +125,23 @@ export const ResumesPage = () => {
           onClick={() => setShowUpload((prev) => !prev)}
           data-testid="toggle-upload-btn"
         >
-          {showUpload ? 'Close Upload' : 'Upload Resume'}
+          {showUpload ? (
+            <>
+              <Icon name="close" size={16} />
+              <span>Close Upload</span>
+            </>
+          ) : (
+            <>
+              <Icon name="upload" size={16} />
+              <span>Upload Resume</span>
+            </>
+          )}
         </Button>
       </div>
 
       {/* Upload Widget (Togglable or if empty) */}
       {showUpload && (
-        <div style={{ animation: 'slideIn 0.2s ease-out' }}>
+        <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
           <ResumeUpload
             onUploadSuccess={handleUploadSuccess}
             onError={() => {}}
@@ -172,10 +183,10 @@ export const ResumesPage = () => {
           }}
           data-testid="resumes-error"
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Unable to load resumes
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem', color: 'var(--text-secondary)' }}>
             {error}
           </p>
           <Button
@@ -191,7 +202,7 @@ export const ResumesPage = () => {
       {/* Empty State */}
       {!isLoading && !error && resumes.length === 0 && (
         <EmptyState
-          icon="📄"
+          icon={<Icon name="resume" size={32} />}
           title="No resumes uploaded yet"
           description="Upload your first resume in PDF or DOCX format to parse and evaluate candidates against job requirements."
           action={
@@ -237,7 +248,7 @@ export const ResumesPage = () => {
               }}
               data-testid="resumes-pagination"
             >
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} resumes
@@ -253,7 +264,7 @@ export const ResumesPage = () => {
                 >
                   &larr; Previous
                 </Button>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }} className="tabular-nums">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button

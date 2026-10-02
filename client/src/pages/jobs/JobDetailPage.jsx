@@ -7,6 +7,7 @@ import JobRequirements from '../../components/jobs/JobRequirements.jsx';
 import DeleteJobDialog from '../../components/jobs/DeleteJobDialog.jsx';
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Job Detail Page
@@ -140,14 +141,15 @@ export const JobDetailPage = () => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.35rem',
             color: 'var(--text-secondary)',
             fontSize: 'var(--text-sm)',
             textDecoration: 'none',
           }}
           data-testid="back-to-jobs-link"
         >
-          <span>&larr;</span> Back to Job Descriptions
+          <Icon name="arrow-left" size={14} />
+          <span>Back to Job Descriptions</span>
         </Link>
       </div>
 
@@ -182,10 +184,15 @@ export const JobDetailPage = () => {
             padding: '2rem',
             borderRadius: 'var(--radius-lg)',
             textAlign: 'center',
+            maxWidth: '560px',
+            margin: '0 auto',
           }}
           data-testid="job-detail-error"
         >
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+            <Icon name="alert" size={28} />
+          </div>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Job Description Not Found or Unavailable
           </h2>
           <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
@@ -213,10 +220,26 @@ export const JobDetailPage = () => {
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
                 flexWrap: 'wrap',
-                gap: '1rem',
+                gap: '1.25rem',
               }}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <span
+                    style={{
+                      width: '0.5rem',
+                      height: '0.5rem',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--accent-primary)',
+                      display: 'inline-block',
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Role Specification
+                  </span>
+                </div>
+
                 <h1
                   style={{
                     fontSize: 'var(--text-2xl)',
@@ -240,6 +263,7 @@ export const JobDetailPage = () => {
                     color: 'var(--text-muted)',
                     marginTop: '0.5rem',
                   }}
+                  className="tabular-nums"
                 >
                   <span>Created {formatDate(job.created_at)}</span>
                   {job.updated_at && job.updated_at !== job.created_at && (
@@ -252,14 +276,24 @@ export const JobDetailPage = () => {
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <Button
                   type="button"
-                  variant={isEditing ? 'secondary' : 'secondary'}
+                  variant="secondary"
                   onClick={() => {
                     setIsEditing((prev) => !prev);
                     setUpdateError('');
                   }}
                   data-testid="toggle-edit-job-btn"
                 >
-                  {isEditing ? 'Cancel Edit' : 'Edit Job'}
+                  {isEditing ? (
+                    <>
+                      <Icon name="close" size={14} />
+                      <span>Cancel Edit</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="edit" size={14} />
+                      <span>Edit Job</span>
+                    </>
+                  )}
                 </Button>
 
                 <Button
@@ -268,7 +302,8 @@ export const JobDetailPage = () => {
                   onClick={() => setShowDeleteDialog(true)}
                   data-testid="delete-job-page-btn"
                 >
-                  Delete
+                  <Icon name="trash" size={14} />
+                  <span>Delete</span>
                 </Button>
               </div>
             </div>
@@ -313,8 +348,9 @@ export const JobDetailPage = () => {
                   marginBottom: '1rem',
                 }}
               >
-                <h3 className="card-title" style={{ margin: 0 }}>
-                  Role Description
+                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Icon name="briefcase" size={16} style={{ color: 'var(--accent-primary)' }} />
+                  <span>Role Description</span>
                 </h3>
               </div>
 
@@ -322,9 +358,13 @@ export const JobDetailPage = () => {
                 style={{
                   fontSize: 'var(--text-sm)',
                   color: 'var(--text-secondary)',
-                  lineHeight: 1.6,
+                  lineHeight: 1.7,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
+                  backgroundColor: 'var(--bg-surface)',
+                  padding: '1.25rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-subtle)',
                 }}
                 data-testid="job-full-description"
               >

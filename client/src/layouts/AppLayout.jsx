@@ -10,7 +10,7 @@ export const AppLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-canvas)' }}>
       {/* Top Header Navbar */}
       <Navbar onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
 
@@ -19,7 +19,7 @@ export const AppLayout = () => {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main style={{ flex: 1, padding: '2rem 1.5rem', minWidth: 0, overflowX: 'hidden' }}>
-          <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div className="container" style={{ maxWidth: '1280px', margin: '0 auto' }}>
             <Outlet />
           </div>
         </main>
@@ -33,11 +33,11 @@ export const AppLayout = () => {
           textAlign: 'center',
           fontSize: 'var(--text-xs)',
           color: 'var(--text-muted)',
-          backgroundColor: 'var(--bg-secondary)',
+          backgroundColor: 'var(--bg-surface)',
         }}
       >
         <div className="container">
-          AI-Powered Resume Analyzer &bull; Deterministic Intelligence Platform
+          AI Resume Analyzer &bull; Deterministic Intelligence Platform
         </div>
       </footer>
     </div>

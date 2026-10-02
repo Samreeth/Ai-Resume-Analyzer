@@ -8,10 +8,13 @@ import analysisApi from '../api/analysis.api.js';
 import Spinner from '../components/common/Spinner.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import Button from '../components/common/Button.jsx';
+import StatCard from '../components/common/StatCard.jsx';
+import Badge from '../components/common/Badge.jsx';
+import Icon from '../components/common/Icon.jsx';
 
 /**
  * Dashboard Page
- * Renders verified metrics and recent activity for Resumes, Job Descriptions, and Match Analyses.
+ * High-performance developer overview of Resumes, Job Descriptions, and Match Analyses.
  */
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -87,15 +90,15 @@ export const DashboardPage = () => {
     const s = String(status || '').toUpperCase();
     switch (s) {
       case 'COMPLETED':
-        return <span className="badge badge-completed">Completed</span>;
+        return <Badge variant="completed">Completed</Badge>;
       case 'PROCESSING':
-        return <span className="badge badge-processing">Processing</span>;
+        return <Badge variant="processing">Processing</Badge>;
       case 'PENDING':
-        return <span className="badge badge-pending">Pending</span>;
+        return <Badge variant="pending">Pending</Badge>;
       case 'FAILED':
-        return <span className="badge badge-failed">Failed</span>;
+        return <Badge variant="failed">Failed</Badge>;
       default:
-        return <span className="badge">{status || 'Unknown'}</span>;
+        return <Badge variant="neutral">{status || 'Unknown'}</Badge>;
     }
   };
 
@@ -129,15 +132,20 @@ export const DashboardPage = () => {
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
-            padding: '1.5rem',
+            padding: '1.75rem',
             borderRadius: 'var(--radius-lg)',
             textAlign: 'center',
+            maxWidth: '560px',
+            margin: '0 auto',
           }}
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+            <Icon name="alert" size={28} />
+          </div>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Unable to load dashboard
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem', color: 'var(--text-secondary)' }}>
             {error}
           </p>
           <Button variant="secondary" onClick={fetchDashboardData} data-testid="dashboard-retry-btn">
@@ -150,172 +158,204 @@ export const DashboardPage = () => {
 
   return (
     <div data-testid="dashboard-content" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Welcome & Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      {/* Welcome Hero Area */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+        }}
+      >
         <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <span
+              style={{
+                width: '0.5rem',
+                height: '0.5rem',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--success)',
+                display: 'inline-block',
+                boxShadow: '0 0 8px var(--success)',
+              }}
+              aria-hidden="true"
+            />
+            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              System Active &bull; Offline Deterministic Engine
+            </span>
+          </div>
+
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>
             Welcome back, {user?.name || 'User'}
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginTop: '0.25rem' }}>
-            System overview and quick access to resumes, jobs, and evaluations
+            Telemetry overview and quick access to resumes, jobs, and evaluations
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {/* Quick Action Buttons */}
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <Link to="/resumes" className="btn btn-secondary btn-sm">
-            Upload Resume
+            <Icon name="upload" size={14} />
+            <span>Upload Resume</span>
           </Link>
           <Link to="/jobs" className="btn btn-secondary btn-sm">
-            Post Job
+            <Icon name="jobs" size={14} />
+            <span>Create Job</span>
           </Link>
-          <Link to="/analyses" className="btn btn-primary btn-sm">
-            Run Analysis
+          <Link to="/analyses/new" className="btn btn-primary btn-sm">
+            <Icon name="sparkles" size={14} />
+            <span>Run Match Analysis</span>
           </Link>
         </div>
       </div>
 
-      {/* Metrics Summary Cards */}
+      {/* Metrics Summary Grid using StatCard */}
       <div className="grid grid-cols-3 gap-6" data-testid="dashboard-metrics-grid">
-        {/* Total Resumes */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Total Resumes
-            </span>
-            <span style={{ color: 'var(--accent-primary)', fontSize: '1.25rem' }} aria-hidden="true">📄</span>
-          </div>
-          <div
-            style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--text-primary)' }}
-            data-testid="metric-total-resumes"
-          >
-            {metrics.totalResumes}
-          </div>
-          <Link
-            to="/resumes"
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--accent-primary)', fontWeight: 500, marginTop: 'auto' }}
-          >
-            View all resumes &rarr;
-          </Link>
-        </div>
+        <StatCard
+          title="Total Resumes"
+          value={metrics.totalResumes}
+          icon={<Icon name="resume" size={20} />}
+          subtitle="Processed & stored in secure vault"
+          linkTo="/resumes"
+          linkText="View all resumes"
+          valueTestId="metric-total-resumes"
+        />
 
-        {/* Total Jobs */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Job Descriptions
-            </span>
-            <span style={{ color: 'var(--accent-primary)', fontSize: '1.25rem' }} aria-hidden="true">💼</span>
-          </div>
-          <div
-            style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--text-primary)' }}
-            data-testid="metric-total-jobs"
-          >
-            {metrics.totalJobs}
-          </div>
-          <Link
-            to="/jobs"
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--accent-primary)', fontWeight: 500, marginTop: 'auto' }}
-          >
-            Manage job descriptions &rarr;
-          </Link>
-        </div>
+        <StatCard
+          title="Job Descriptions"
+          value={metrics.totalJobs}
+          icon={<Icon name="jobs" size={20} />}
+          subtitle="Target roles & competency profiles"
+          linkTo="/jobs"
+          linkText="Manage job descriptions"
+          valueTestId="metric-total-jobs"
+        />
 
-        {/* Total Analyses */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Match Analyses
-            </span>
-            <span style={{ color: 'var(--accent-primary)', fontSize: '1.25rem' }} aria-hidden="true">📊</span>
-          </div>
-          <div
-            style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--text-primary)' }}
-            data-testid="metric-total-analyses"
-          >
-            {metrics.totalAnalyses}
-          </div>
-          <Link
-            to="/analyses"
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--accent-primary)', fontWeight: 500, marginTop: 'auto' }}
-          >
-            View match evaluations &rarr;
-          </Link>
-        </div>
+        <StatCard
+          title="Match Analyses"
+          value={metrics.totalAnalyses}
+          icon={<Icon name="analyses" size={20} />}
+          subtitle="Deterministic evaluation reports"
+          linkTo="/analyses"
+          linkText="View match evaluations"
+          valueTestId="metric-total-analyses"
+        />
       </div>
 
       {/* Recent Match Analyses Section */}
-      <div className="card">
-        <div className="card-header">
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '1.25rem 1.5rem',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
           <div>
-            <h2 className="card-title">Recent Match Analyses</h2>
+            <h2 className="card-title" style={{ margin: 0 }}>Recent Match Analyses</h2>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
               Latest candidate-to-job compatibility assessments
             </p>
           </div>
           {recentAnalyses.length > 0 && (
-            <Link to="/analyses" style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
-              View all ({metrics.totalAnalyses})
+            <Link
+              to="/analyses"
+              style={{
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                color: 'var(--accent-primary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+            >
+              <span>View all ({metrics.totalAnalyses})</span>
+              <Icon name="arrow-right" size={12} />
             </Link>
           )}
         </div>
 
         {recentAnalyses.length === 0 ? (
-          <EmptyState
-            icon="📊"
-            title="No match analyses yet"
-            description="Run your first analysis to compare a resume against a job description with deterministic scoring and gap recommendations."
-            action={
-              <Link to="/analyses" className="btn btn-primary btn-sm">
-                Start First Analysis
-              </Link>
-            }
-          />
+          <div style={{ padding: '1.5rem' }}>
+            <EmptyState
+              icon={<Icon name="chart" size={32} />}
+              title="No match analyses yet"
+              description="Run your first analysis to compare a resume against a job description with deterministic scoring and gap recommendations."
+              action={
+                <Link to="/analyses/new" className="btn btn-primary btn-sm">
+                  Start First Analysis
+                </Link>
+              }
+            />
+          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 'var(--text-sm)' }}>
+            <table className="data-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: 'var(--text-xs)', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Job Title</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Candidate Resume</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Overall Score</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Skill Breakdown</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Date</th>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Candidate Resume</th>
+                  <th>Overall Score</th>
+                  <th>Skill Breakdown</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {recentAnalyses.map((a) => (
-                  <tr
-                    key={a.analysis_id}
-                    style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background-color var(--transition-fast)' }}
-                  >
-                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      <Link to={`/analyses/${a.analysis_id}`} style={{ color: 'var(--text-primary)' }}>
-                        {a.job_title}
-                      </Link>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-secondary)' }}>
-                      {a.resume_file_name}
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          color: a.overall_score >= 70 ? 'var(--success)' : a.overall_score >= 40 ? 'var(--warning)' : 'var(--danger)',
-                        }}
-                      >
-                        {a.overall_score}%
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
-                      <span style={{ color: 'var(--success)', fontWeight: 600 }}>{a.matched_count} matched</span>
-                      {' '}&bull;{' '}
-                      <span style={{ color: 'var(--danger)', fontWeight: 600 }}>{a.missing_count} missing</span>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                      {formatDate(a.created_at)}
-                    </td>
-                  </tr>
-                ))}
+                {recentAnalyses.map((a) => {
+                  const score = Number(a.overall_score) || 0;
+                  return (
+                    <tr key={a.analysis_id}>
+                      <td style={{ fontWeight: 600 }}>
+                        <Link
+                          to={`/analyses/${a.analysis_id}`}
+                          style={{
+                            color: 'var(--text-primary)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.375rem',
+                          }}
+                        >
+                          <span>{a.job_title}</span>
+                          <Icon name="arrow-up-right" size={12} style={{ color: 'var(--text-muted)' }} />
+                        </Link>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Icon name="file" size={14} style={{ color: 'var(--text-muted)' }} />
+                          {a.resume_file_name}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className="tabular-nums"
+                          style={{
+                            fontWeight: 700,
+                            fontSize: 'var(--text-sm)',
+                            color: 'var(--text-primary)',
+                            backgroundColor: 'var(--bg-elevated)',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--border-subtle)',
+                          }}
+                        >
+                          {score.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td style={{ fontSize: 'var(--text-xs)' }}>
+                        <span style={{ color: 'var(--success)', fontWeight: 600 }}>{a.matched_count} matched</span>
+                        {' '}&bull;{' '}
+                        <span style={{ color: 'var(--danger)', fontWeight: 600 }}>{a.missing_count} missing</span>
+                      </td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                        {formatDate(a.created_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -334,7 +374,7 @@ export const DashboardPage = () => {
               </p>
             </div>
             {recentResumes.length > 0 && (
-              <Link to="/resumes" style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+              <Link to="/resumes" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent-primary)' }}>
                 View all
               </Link>
             )}
@@ -342,7 +382,7 @@ export const DashboardPage = () => {
 
           {recentResumes.length === 0 ? (
             <EmptyState
-              icon="📄"
+              icon={<Icon name="resume" size={32} />}
               title="No resumes uploaded"
               description="Upload candidate resumes in PDF or DOCX format to parse skills."
               action={
@@ -352,7 +392,7 @@ export const DashboardPage = () => {
               }
             />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
               {recentResumes.map((r) => (
                 <div
                   key={r.resume_id}
@@ -360,10 +400,11 @@ export const DashboardPage = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.75rem',
-                    backgroundColor: 'var(--bg-tertiary)',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: 'var(--bg-surface)',
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
+                    transition: 'border-color var(--transition-fast)',
                   }}
                 >
                   <div style={{ minWidth: 0, flex: 1, marginRight: '1rem' }}>
@@ -402,7 +443,7 @@ export const DashboardPage = () => {
               </p>
             </div>
             {recentJobs.length > 0 && (
-              <Link to="/jobs" style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+              <Link to="/jobs" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent-primary)' }}>
                 View all
               </Link>
             )}
@@ -410,17 +451,17 @@ export const DashboardPage = () => {
 
           {recentJobs.length === 0 ? (
             <EmptyState
-              icon="💼"
+              icon={<Icon name="jobs" size={32} />}
               title="No jobs created"
               description="Define job descriptions to identify required competencies."
               action={
                 <Link to="/jobs" className="btn btn-secondary btn-sm">
-                  Post New Job
+                  Create Job
                 </Link>
               }
             />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
               {recentJobs.map((j) => {
                 const skillCount = j.extracted_data?.skills?.length ?? 0;
                 return (
@@ -430,10 +471,11 @@ export const DashboardPage = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '0.75rem',
-                      backgroundColor: 'var(--bg-tertiary)',
+                      padding: '0.75rem 1rem',
+                      backgroundColor: 'var(--bg-surface)',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-subtle)',
+                      transition: 'border-color var(--transition-fast)',
                     }}
                   >
                     <div style={{ minWidth: 0, flex: 1, marginRight: '1rem' }}>
@@ -455,7 +497,11 @@ export const DashboardPage = () => {
                         {skillCount} extracted skills &bull; {formatDate(j.created_at)}
                       </div>
                     </div>
-                    <Link to={`/jobs/${j.job_id}`} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: 'var(--text-xs)' }}>
+                    <Link
+                      to={`/jobs/${j.job_id}`}
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: 'var(--text-xs)' }}
+                    >
                       Details
                     </Link>
                   </div>

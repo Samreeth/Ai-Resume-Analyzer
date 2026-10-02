@@ -9,11 +9,17 @@ import Recommendations from '../../components/analysis/Recommendations.jsx';
 import DeleteAnalysisDialog from '../../components/analysis/DeleteAnalysisDialog.jsx';
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Detailed Compatibility Analysis Report Page
- * Displays overall matching scores, itemized skill verifications,
- * resume structural diagnostics, and actionable prioritized recommendations.
+ * Technical report layout:
+ * 1. Breadcrumb navigation
+ * 2. Header banner with job & resume metadata
+ * 3. Overall score & coverage summary
+ * 4. Skill matching & evidence breakdown
+ * 5. Resume quality diagnostics
+ * 6. Actionable recommendations
  */
 export const AnalysisDetailPage = () => {
   const { analysisId } = useParams();
@@ -126,14 +132,15 @@ export const AnalysisDetailPage = () => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.35rem',
             color: 'var(--text-secondary)',
             fontSize: 'var(--text-sm)',
             textDecoration: 'none',
           }}
           data-testid="back-to-analyses-link"
         >
-          <span>&larr;</span> Back to Analyses
+          <Icon name="arrow-left" size={14} />
+          <span>Back to Analyses</span>
         </Link>
       </div>
 
@@ -168,10 +175,15 @@ export const AnalysisDetailPage = () => {
             padding: '2rem',
             borderRadius: 'var(--radius-lg)',
             textAlign: 'center',
+            maxWidth: '560px',
+            margin: '0 auto',
           }}
           data-testid="analysis-detail-error"
         >
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+            <Icon name="alert" size={28} />
+          </div>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Analysis Report Unavailable
           </h2>
           <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
@@ -199,10 +211,26 @@ export const AnalysisDetailPage = () => {
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
                 flexWrap: 'wrap',
-                gap: '1rem',
+                gap: '1.25rem',
               }}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <span
+                    style={{
+                      width: '0.5rem',
+                      height: '0.5rem',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--accent-primary)',
+                      display: 'inline-block',
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Compatibility Report
+                  </span>
+                </div>
+
                 <h1
                   style={{
                     fontSize: 'var(--text-2xl)',
@@ -226,15 +254,17 @@ export const AnalysisDetailPage = () => {
                     color: 'var(--text-muted)',
                     marginTop: '0.5rem',
                   }}
+                  className="tabular-nums"
                 >
-                  <span>
-                    Resume:{' '}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Icon name="file" size={13} style={{ color: 'var(--text-muted)' }} />
+                    <span>Resume:</span>{' '}
                     <strong style={{ color: 'var(--text-primary)' }}>
                       {analysis.resume_file_name}
                     </strong>
                   </span>
                   <span>Evaluated {formatDate(analysis.created_at)}</span>
-                  <span>Engine v{analysis.scoring_version || '1.0'}</span>
+                  <span>Deterministic Engine v{analysis.scoring_version || '1.0'}</span>
                 </div>
               </div>
 
@@ -246,7 +276,8 @@ export const AnalysisDetailPage = () => {
                   onClick={() => setShowDeleteDialog(true)}
                   data-testid="delete-analysis-page-btn"
                 >
-                  Delete Report
+                  <Icon name="trash" size={14} />
+                  <span>Delete Report</span>
                 </Button>
               </div>
             </div>

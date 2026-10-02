@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Button from '../common/Button.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Accessible confirmation modal for deleting a historical analysis report
@@ -20,6 +21,17 @@ export const DeleteAnalysisDialog = ({
   isDeleting = false,
   error,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isDeleting) {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isDeleting, onCancel]);
+
   if (!isOpen) return null;
 
   const jobTitle = analysis?.job_title || 'Target Job';
@@ -42,16 +54,35 @@ export const DeleteAnalysisDialog = ({
         data-testid="delete-analysis-dialog"
       >
         <div style={{ marginBottom: '1.25rem' }}>
-          <h3
-            id="delete-analysis-dialog-title"
-            style={{
-              fontSize: 'var(--text-lg)',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-            }}
-          >
-            Delete Analysis Report
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <div
+              style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--danger-bg)',
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-hidden="true"
+            >
+              <Icon name="trash" size={16} />
+            </div>
+            <h3
+              id="delete-analysis-dialog-title"
+              style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                margin: 0,
+              }}
+            >
+              Delete Analysis Report
+            </h3>
+          </div>
+
           <p
             id="delete-analysis-dialog-desc"
             style={{
@@ -75,14 +106,18 @@ export const DeleteAnalysisDialog = ({
               backgroundColor: 'var(--danger-bg)',
               border: '1px solid var(--danger-border)',
               color: 'var(--danger)',
-              padding: '0.75rem',
+              padding: '0.75rem 1rem',
               borderRadius: 'var(--radius-md)',
               fontSize: 'var(--text-sm)',
               marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
             }}
             data-testid="delete-analysis-dialog-error"
           >
-            {error}
+            <Icon name="alert" size={16} />
+            <span>{error}</span>
           </div>
         )}
 

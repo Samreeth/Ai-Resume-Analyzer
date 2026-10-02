@@ -1,4 +1,7 @@
 import React from 'react';
+import ScoreRing from '../common/ScoreRing.jsx';
+import ProgressBar from '../common/ProgressBar.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Visual summary of analysis scores and category coverages
@@ -24,63 +27,38 @@ export const AnalysisSummary = ({ analysis }) => {
       : '0.0';
 
   return (
-    <div className="card" data-testid="analysis-summary-card">
+    <div className="card" data-testid="analysis-summary-card" style={{ padding: '1.75rem' }}>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '2rem',
           alignItems: 'center',
         }}
       >
-        {/* Prominent Overall Score Card */}
+        {/* Prominent Overall Score Card with ScoreRing */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.75rem 1rem',
-            backgroundColor: 'var(--bg-secondary)',
+            padding: '2rem 1.5rem',
+            backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: 'var(--radius-xl)',
             textAlign: 'center',
+            boxShadow: 'var(--shadow-sm)',
           }}
           data-testid="overall-score-display"
         >
-          <span
-            style={{
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--text-muted)',
-              marginBottom: '0.5rem',
-            }}
-          >
-            Overall Match Score
-          </span>
-
-          <div
-            style={{
-              fontSize: '3rem',
-              fontWeight: 800,
-              lineHeight: 1,
-              color: 'var(--text-primary)',
-            }}
-          >
-            {score.toFixed(1)}%
-          </div>
-
-          <span
-            style={{
-              marginTop: '0.5rem',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            Deterministic match score
-          </span>
+          <ScoreRing
+            score={score}
+            size={144}
+            strokeWidth={11}
+            label="Overall Match Score"
+            sublabel="Deterministic match score"
+          />
         </div>
 
         {/* Breakdown Metric Grid */}
@@ -95,27 +73,46 @@ export const AnalysisSummary = ({ analysis }) => {
           {/* Required Skills Coverage */}
           <div
             style={{
-              backgroundColor: 'var(--bg-secondary)',
+              backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}
             data-testid="required-coverage-stat"
           >
-            <span
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-              }}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Required Skills Match
+              </span>
+              <Icon name="check" size={14} style={{ color: 'var(--danger)' }} />
+            </div>
+
+            <div
+              className="tabular-nums"
+              style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--danger)' }}
             >
-              Required Skills Match
-            </span>
-            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--danger)', marginTop: '0.25rem' }}>
               {reqCoverage}%
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+
+            <ProgressBar
+              value={Number(reqCoverage)}
+              variant="required"
+              height="6px"
+              showValue={false}
+            />
+
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }} className="tabular-nums">
               {summary.matched_required_count ?? 0} of {summary.required_skills_count ?? 0} skills detected
             </div>
           </div>
@@ -123,27 +120,46 @@ export const AnalysisSummary = ({ analysis }) => {
           {/* Preferred Skills Coverage */}
           <div
             style={{
-              backgroundColor: 'var(--bg-secondary)',
+              backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}
             data-testid="preferred-coverage-stat"
           >
-            <span
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-              }}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Preferred Skills Match
+              </span>
+              <Icon name="sparkles" size={14} style={{ color: 'var(--info)' }} />
+            </div>
+
+            <div
+              className="tabular-nums"
+              style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--info)' }}
             >
-              Preferred Skills Match
-            </span>
-            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--info)', marginTop: '0.25rem' }}>
               {prefCoverage}%
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+
+            <ProgressBar
+              value={Number(prefCoverage)}
+              variant="preferred"
+              height="6px"
+              showValue={false}
+            />
+
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }} className="tabular-nums">
               {summary.matched_preferred_count ?? 0} of {summary.preferred_skills_count ?? 0} skills detected
             </div>
           </div>
@@ -151,26 +167,38 @@ export const AnalysisSummary = ({ analysis }) => {
           {/* Total Skills Evaluated */}
           <div
             style={{
-              backgroundColor: 'var(--bg-secondary)',
+              backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}
           >
-            <span
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-              }}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Total Role Skills
+              </span>
+              <Icon name="briefcase" size={14} style={{ color: 'var(--accent-primary)' }} />
+            </div>
+
+            <div
+              className="tabular-nums"
+              style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--text-primary)' }}
             >
-              Total Role Skills
-            </span>
-            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
               {summary.total_job_skills ?? 0}
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'auto' }} className="tabular-nums">
               {(summary.matched_required_count ?? 0) + (summary.matched_preferred_count ?? 0)} matched,{' '}
               {(summary.missing_required_count ?? 0) + (summary.missing_preferred_count ?? 0)} missing
             </div>
@@ -180,26 +208,38 @@ export const AnalysisSummary = ({ analysis }) => {
           {summary.average_confidence !== undefined && (
             <div
               style={{
-                backgroundColor: 'var(--bg-secondary)',
+                backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1rem',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
               }}
             >
-              <span
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                }}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Avg Confidence
+                </span>
+                <Icon name="chart" size={14} style={{ color: 'var(--border-focus)' }} />
+              </div>
+
+              <div
+                className="tabular-nums"
+                style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--text-primary)' }}
               >
-                Avg Confidence
-              </span>
-              <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
                 {(Number(summary.average_confidence) * 100).toFixed(0)}%
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'auto' }}>
                 Deterministic pattern precision
               </div>
             </div>

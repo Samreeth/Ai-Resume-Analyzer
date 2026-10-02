@@ -3,10 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
 import Button from '../common/Button.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Top Navbar component
- * Displays application identity, current user identity, and logout trigger.
+ * Sticky 64px frosted glass header with brand mark, user avatar, and logout trigger.
  *
  * @param {object} props
  * @param {function} [props.onToggleSidebar] - Optional sidebar toggle for mobile
@@ -30,12 +31,23 @@ export const Navbar = ({ onToggleSidebar }) => {
     }
   };
 
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  };
+
   return (
     <header
       className="navbar"
       style={{
         borderBottom: '1px solid var(--border-subtle)',
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: 'rgba(15, 23, 42, 0.82)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -58,13 +70,14 @@ export const Navbar = ({ onToggleSidebar }) => {
               onClick={onToggleSidebar}
               className="btn btn-secondary btn-sm"
               aria-label="Toggle navigation menu"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem 0.5rem' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.4rem 0.5rem',
+              }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
+              <Icon name="menu" size={18} ariaLabel="Menu" />
             </button>
           )}
 
@@ -83,56 +96,94 @@ export const Navbar = ({ onToggleSidebar }) => {
                 width: '2rem',
                 height: '2rem',
                 borderRadius: 'var(--radius-md)',
-                background: 'var(--gradient-primary)',
+                background: 'var(--gradient-brand)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: 'var(--text-sm)',
                 color: '#ffffff',
-                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.35)',
+                boxShadow: '0 2px 10px rgba(99, 102, 241, 0.35)',
               }}
               aria-hidden="true"
             >
-              AI
+              <Icon name="sparkles" size={16} />
             </span>
-            <span
-              style={{
-                fontWeight: 700,
-                fontSize: 'var(--text-base)',
-                letterSpacing: '-0.02em',
-                color: 'var(--text-primary)',
-              }}
-            >
-              Resume Analyzer
-            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontSize: 'var(--text-base)',
+                  letterSpacing: '-0.025em',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Resume Analyzer
+              </span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--accent-muted)',
+                  color: 'var(--border-focus)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                AI
+              </span>
+            </div>
           </NavLink>
         </div>
 
         {/* Authenticated User Identity & Logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           {user && (
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {/* User Avatar Circle */}
               <div
                 style={{
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.2,
-                }}
-                data-testid="navbar-user-name"
-              >
-                {user.name}
-              </div>
-              <div
-                style={{
+                  width: '2.125rem',
+                  height: '2.125rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   fontSize: 'var(--text-xs)',
-                  color: 'var(--text-muted)',
-                  lineHeight: 1.2,
+                  fontWeight: 700,
+                  color: 'var(--border-focus)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
-                data-testid="navbar-user-email"
+                aria-hidden="true"
               >
-                {user.email}
+                {getInitials(user.name)}
+              </div>
+
+              <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.2,
+                  }}
+                  data-testid="navbar-user-name"
+                >
+                  {user.name}
+                </span>
+                <span
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.2,
+                    marginTop: '0.1rem',
+                  }}
+                  data-testid="navbar-user-email"
+                >
+                  {user.email}
+                </span>
               </div>
             </div>
           )}

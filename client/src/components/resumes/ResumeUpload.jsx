@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import resumeApi from '../../api/resume.api.js';
 import { useToast } from '../../hooks/useToast.js';
 import Button from '../common/Button.jsx';
+import Icon from '../common/Icon.jsx';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx'];
@@ -156,7 +157,7 @@ export const ResumeUpload = ({
   return (
     <div className={`card ${className}`.trim()} data-testid="resume-upload-card">
       <div style={{ marginBottom: '1.25rem' }}>
-        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
           Upload Candidate Resume
         </h3>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -193,19 +194,23 @@ export const ResumeUpload = ({
           }
         }}
         aria-label="Upload dropzone. Click or drop a PDF or DOCX file here."
-        style={{
-          border: isDragActive ? '2px dashed var(--accent-primary)' : '2px dashed var(--border-muted)',
-          backgroundColor: isDragActive ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '2rem 1.5rem',
-          textAlign: 'center',
-          cursor: isUploading ? 'not-allowed' : 'pointer',
-          transition: 'all var(--transition-fast)',
-        }}
         data-testid="upload-dropzone"
       >
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', lineHeight: 1 }} aria-hidden="true">
-          📤
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '3.5rem',
+            height: '3.5rem',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: 'var(--accent-muted)',
+            color: 'var(--accent-primary)',
+            marginBottom: '0.875rem',
+          }}
+          aria-hidden="true"
+        >
+          <Icon name="upload" size={26} />
         </div>
 
         {selectedFile ? (
@@ -213,7 +218,7 @@ export const ResumeUpload = ({
             <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
               {selectedFile.name}
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }} className="tabular-nums">
               {(selectedFile.size / 1024).toFixed(1)} KB &bull; Ready to upload
             </div>
           </div>
@@ -237,7 +242,7 @@ export const ResumeUpload = ({
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
-            padding: '0.75rem',
+            padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-md)',
             fontSize: 'var(--text-sm)',
             marginTop: '1rem',

@@ -8,6 +8,7 @@ import DeleteJobDialog from '../../components/jobs/DeleteJobDialog.jsx';
 import Spinner from '../../components/common/Spinner.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import Button from '../../components/common/Button.jsx';
+import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Jobs List Page
@@ -142,7 +143,7 @@ export const JobsPage = () => {
         }}
       >
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Job Descriptions
           </h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -159,13 +160,23 @@ export const JobsPage = () => {
           }}
           data-testid="toggle-create-job-btn"
         >
-          {showCreate ? 'Cancel' : 'Create Job Description'}
+          {showCreate ? (
+            <>
+              <Icon name="close" size={16} />
+              <span>Cancel</span>
+            </>
+          ) : (
+            <>
+              <Icon name="jobs" size={16} />
+              <span>Create Job Description</span>
+            </>
+          )}
         </Button>
       </div>
 
       {/* Create Job Form Card */}
       {showCreate && (
-        <div className="card" style={{ animation: 'slideIn 0.2s ease-out' }} data-testid="create-job-card">
+        <div className="card" style={{ animation: 'fadeIn 0.2s ease-out' }} data-testid="create-job-card">
           <div
             style={{
               borderBottom: '1px solid var(--border-subtle)',
@@ -228,10 +239,10 @@ export const JobsPage = () => {
           }}
           data-testid="jobs-error"
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Unable to load job descriptions
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem', color: 'var(--text-secondary)' }}>
             {error}
           </p>
           <Button
@@ -247,7 +258,7 @@ export const JobsPage = () => {
       {/* Empty State */}
       {!isLoading && !error && jobs.length === 0 && (
         <EmptyState
-          icon="💼"
+          icon={<Icon name="jobs" size={32} />}
           title="No job descriptions created yet"
           description="Create your first job description to extract structured requirements and evaluate candidate resumes against role criteria."
           action={
@@ -293,7 +304,7 @@ export const JobsPage = () => {
               }}
               data-testid="jobs-pagination"
             >
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} job descriptions
@@ -309,7 +320,7 @@ export const JobsPage = () => {
                 >
                   &larr; Previous
                 </Button>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }} className="tabular-nums">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button

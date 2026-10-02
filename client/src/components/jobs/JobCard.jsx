@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button.jsx';
+import Badge from '../common/Badge.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Job Card item for list display
@@ -62,11 +64,15 @@ export const JobCard = ({ job, onDeleteClick }) => {
               fontWeight: 600,
               color: 'var(--text-primary)',
               wordBreak: 'break-word',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
             }}
             title={job.title}
             data-testid={`job-title-link-${job.job_id}`}
           >
-            {job.title}
+            <Icon name="briefcase" size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>{job.title}</span>
           </Link>
         </div>
 
@@ -93,34 +99,14 @@ export const JobCard = ({ job, onDeleteClick }) => {
         {hasSkills ? (
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
             {requiredCount !== null && (
-              <span
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  backgroundColor: 'var(--danger-bg)',
-                  color: 'var(--danger)',
-                  border: '1px solid var(--danger-border)',
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 500,
-                }}
-              >
+              <Badge variant="required" size="sm">
                 Required: {requiredCount}
-              </span>
+              </Badge>
             )}
             {preferredCount !== null && (
-              <span
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  backgroundColor: 'var(--info-bg)',
-                  color: 'var(--info)',
-                  border: '1px solid var(--info-border)',
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 500,
-                }}
-              >
+              <Badge variant="preferred" size="sm">
                 Preferred: {preferredCount}
-              </span>
+              </Badge>
             )}
           </div>
         ) : (
@@ -151,7 +137,7 @@ export const JobCard = ({ job, onDeleteClick }) => {
           color: 'var(--text-muted)',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }} className="tabular-nums">
           <span>Created {formatDate(job.created_at)}</span>
           {job.updated_at && job.updated_at !== job.created_at && (
             <span style={{ fontSize: '10px' }}>Updated {formatDate(job.updated_at)}</span>
@@ -162,17 +148,15 @@ export const JobCard = ({ job, onDeleteClick }) => {
           <Link
             to={`/jobs/${job.job_id}`}
             className="btn btn-secondary btn-sm"
-            style={{ fontSize: 'var(--text-xs)' }}
             data-testid={`view-job-link-${job.job_id}`}
           >
-            View
+            Inspect
           </Link>
           <Button
             variant="danger"
             size="sm"
             onClick={() => onDeleteClick(job)}
             ariaLabel={`Delete job description ${job.title}`}
-            style={{ fontSize: 'var(--text-xs)' }}
             data-testid={`delete-job-btn-${job.job_id}`}
           >
             Delete

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button.jsx';
+import Badge from '../common/Badge.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Analysis Card item for history list display
@@ -55,11 +57,15 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
                 fontWeight: 600,
                 color: 'var(--text-primary)',
                 wordBreak: 'break-word',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
               }}
               title={analysis.job_title}
               data-testid={`analysis-title-link-${analysis.analysis_id}`}
             >
-              {analysis.job_title}
+              <Icon name="chart" size={16} style={{ color: 'var(--accent-primary)' }} />
+              <span>{analysis.job_title}</span>
             </Link>
 
             <div
@@ -69,9 +75,10 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
                 gap: '0.375rem',
                 fontSize: 'var(--text-xs)',
                 color: 'var(--text-secondary)',
-                marginTop: '0.25rem',
+                marginTop: '0.35rem',
               }}
             >
+              <Icon name="file" size={12} style={{ color: 'var(--text-muted)' }} />
               <span>Resume:</span>
               <strong style={{ color: 'var(--text-primary)', wordBreak: 'break-word' }}>
                 {analysis.resume_file_name}
@@ -81,13 +88,14 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
 
           {/* Score Badge */}
           <span
+            className="tabular-nums"
             style={{
               fontSize: 'var(--text-sm)',
               fontWeight: 700,
               padding: '0.25rem 0.625rem',
               borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--bg-tertiary)',
-              borderColor: 'var(--border-subtle)',
+              backgroundColor: 'var(--bg-elevated)',
+              borderColor: 'var(--border-default)',
               borderWidth: '1px',
               borderStyle: 'solid',
               color: 'var(--text-primary)',
@@ -101,32 +109,12 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
 
         {/* Skill Counts Breakdown */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-          <span
-            style={{
-              fontSize: 'var(--text-xs)',
-              backgroundColor: 'var(--success-bg)',
-              color: 'var(--success)',
-              border: '1px solid var(--success-border)',
-              padding: '0.2rem 0.5rem',
-              borderRadius: 'var(--radius-sm)',
-              fontWeight: 500,
-            }}
-          >
+          <Badge variant="matched" size="sm">
             Matched: {analysis.matched_count ?? 0}
-          </span>
-          <span
-            style={{
-              fontSize: 'var(--text-xs)',
-              backgroundColor: 'var(--danger-bg)',
-              color: 'var(--danger)',
-              border: '1px solid var(--danger-border)',
-              padding: '0.2rem 0.5rem',
-              borderRadius: 'var(--radius-sm)',
-              fontWeight: 500,
-            }}
-          >
+          </Badge>
+          <Badge variant="missing" size="sm">
             Missing: {analysis.missing_count ?? 0}
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -143,13 +131,12 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
           color: 'var(--text-muted)',
         }}
       >
-        <span>Analyzed {formatDate(analysis.created_at)}</span>
+        <span className="tabular-nums">Analyzed {formatDate(analysis.created_at)}</span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Link
             to={`/analyses/${analysis.analysis_id}`}
             className="btn btn-secondary btn-sm"
-            style={{ fontSize: 'var(--text-xs)' }}
             data-testid={`view-analysis-link-${analysis.analysis_id}`}
           >
             View Report
@@ -159,7 +146,6 @@ export const AnalysisCard = ({ analysis, onDeleteClick }) => {
             size="sm"
             onClick={() => onDeleteClick(analysis)}
             ariaLabel={`Delete analysis for ${analysis.job_title}`}
-            style={{ fontSize: 'var(--text-xs)' }}
             data-testid={`delete-analysis-btn-${analysis.analysis_id}`}
           >
             Delete

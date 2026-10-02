@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import ResumeStatusBadge from './ResumeStatusBadge.jsx';
 import Button from '../common/Button.jsx';
+import Icon from '../common/Icon.jsx';
 
 /**
  * Resume Card item for list display
@@ -48,21 +49,23 @@ export const ResumeCard = ({ resume, onDeleteClick }) => {
       {/* Header with Title & Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
             <span
               style={{
-                fontSize: 'var(--text-xs)',
+                fontSize: '0.65rem',
                 fontWeight: 700,
-                padding: '0.125rem 0.375rem',
+                padding: '0.125rem 0.4rem',
                 borderRadius: 'var(--radius-sm)',
-                backgroundColor: isDocx ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                color: isDocx ? '#60a5fa' : '#f87171',
+                backgroundColor: isDocx ? 'rgba(56, 189, 248, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                color: isDocx ? 'var(--info)' : 'var(--danger)',
+                border: `1px solid ${isDocx ? 'var(--info-border)' : 'var(--danger-border)'}`,
                 textTransform: 'uppercase',
+                letterSpacing: '0.04em',
               }}
             >
               {isDocx ? 'DOCX' : 'PDF'}
             </span>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
               {formatFileSize(resume.file_size)}
             </span>
           </div>
@@ -74,10 +77,14 @@ export const ResumeCard = ({ resume, onDeleteClick }) => {
               fontWeight: 600,
               color: 'var(--text-primary)',
               wordBreak: 'break-word',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
             }}
             title={resume.file_name}
           >
-            {resume.file_name}
+            <Icon name="file" size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>{resume.file_name}</span>
           </Link>
         </div>
 
@@ -103,16 +110,14 @@ export const ResumeCard = ({ resume, onDeleteClick }) => {
           <Link
             to={`/resumes/${resume.resume_id}`}
             className="btn btn-secondary btn-sm"
-            style={{ fontSize: 'var(--text-xs)' }}
           >
-            View
+            Inspect
           </Link>
           <Button
             variant="danger"
             size="sm"
             onClick={() => onDeleteClick(resume)}
             ariaLabel={`Delete resume ${resume.file_name}`}
-            style={{ fontSize: 'var(--text-xs)' }}
             data-testid={`delete-resume-btn-${resume.resume_id}`}
           >
             Delete
