@@ -29,10 +29,20 @@ router.post('/:resumeId/ai-profile', aiGenerationRateLimiter, resumeAiController
 // 6. Retrieve cached AI resume understanding profile
 router.get('/:resumeId/ai-profile', resumeAiController.getAiProfile);
 
-// 7. Get resume details by ID
+// 7. Generate or refresh AI contextual job comparison (rate limited)
+router.post(
+  '/:resumeId/ai-job-comparison',
+  aiGenerationRateLimiter,
+  resumeAiController.generateAiJobComparison
+);
+
+// 8. Retrieve cached AI contextual job comparison
+router.get('/:resumeId/ai-job-comparison', resumeAiController.getAiJobComparison);
+
+// 9. Get resume details by ID
 router.get('/:resumeId', resumeController.getById);
 
-// 8. Delete resume by ID
+// 10. Delete resume by ID
 router.delete('/:resumeId', resumeController.deleteById);
 
 export default router;

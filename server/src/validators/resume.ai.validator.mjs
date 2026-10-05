@@ -247,9 +247,117 @@ export const resumeAiProfileSchema = z.object({
     .default([]),
 });
 
+export const aiJobComparisonRequestSchema = z.preprocess((val) => {
+  if (val && typeof val === 'object') {
+    const raw = { ...val };
+    if (!raw.jobId && raw.job_id) raw.jobId = raw.job_id;
+    if (raw.force_refresh === undefined && raw.forceRefresh !== undefined) {
+      raw.force_refresh = raw.forceRefresh;
+    }
+    return raw;
+  }
+  return val;
+}, z.object({
+  jobId: z.string({ required_error: 'Job ID is required' }).uuid({ message: 'Invalid job ID format. Must be a valid UUID' }),
+  consent: z.literal(true, {
+    errorMap: () => ({
+      message: 'Explicit consent is required to process resume and job text with Gemini AI.',
+    }),
+  }),
+  force_refresh: z.boolean().optional().default(false),
+}));
+
+/**
+ * Validation schema for GET /api/resumes/:resumeId/ai-job-comparison query params
+ */
+export const aiJobComparisonQuerySchema = z.preprocess((val) => {
+  if (val && typeof val === 'object') {
+    const raw = { ...val };
+    if (!raw.jobId && raw.job_id) raw.jobId = raw.job_id;
+    return raw;
+  }
+  return val;
+}, z.object({
+  jobId: z.string({ required_error: 'Job ID is required' }).uuid({ message: 'Invalid job ID format. Must be a valid UUID' }),
+}));
+
+/**
+ * Stage 3.1 Claim Provenance / Source Type Schema
+ */
+export const claimSourceTypeSchema = z.enum([
+  'RESUME_EVIDENCE',
+  'DETERMINISTIC_ANALYSIS',
+  'JOB_REQUIREMENT',
+]);
+
+/**
+ * Stage 3 & 3.1 Comparison Schemas
+ */
+export const comparisonOverallContextSchema = z.object({
+  source_type: claimSourceTypeSchema,
+  summary: z.string().min(5).max(2000).trim(),
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const comparisonStrengthItemSchema = z.object({
+  claim: z.string().min(3).max(500).trim(),
+  source_type: claimSourceTypeSchema,
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const comparisonGapItemSchema = z.object({
+  claim: z.string().min(3).max(500).trim(),
+  source_type: claimSourceTypeSchema,
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const comparisonRequirementItemSchema = z.object({
+  requirement: z.string().min(1).max(300).trim(),
+  context: z.string().min(1).max(1000).trim(),
+  source_type: claimSourceTypeSchema,
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  match_type: z.enum(['EXACT_MATCH', 'ADJACENT', 'NO_EVIDENCE']).default('NO_EVIDENCE'),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const comparisonTransferableItemSchema = z.object({
+  claim: z.string().min(3).max(500).trim(),
+  source_type: claimSourceTypeSchema,
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const comparisonRecommendationItemSchema = z.object({
+  recommendation: z.string().min(3).max(500).trim(),
+  reason: z.string().min(3).max(1000).trim(),
+  source_type: claimSourceTypeSchema,
+  evidence_snippet: z.string().max(AI_PROFILE_LIMITS.MAX_EVIDENCE_LENGTH).nullable().optional().default(null),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+export const resumeJobComparisonOutputSchema = z.object({
+  overall_context: comparisonOverallContextSchema,
+  strengths: z.array(comparisonStrengthItemSchema).default([]),
+  gaps: z.array(comparisonGapItemSchema).default([]),
+  requirement_analysis: z.array(comparisonRequirementItemSchema).default([]),
+  transferable_experience: z.array(comparisonTransferableItemSchema).default([]),
+  recommendations: z.array(comparisonRecommendationItemSchema).default([]),
+});
+
 export default {
   AI_PROFILE_LIMITS,
   aiProfileRequestSchema,
+  aiJobComparisonRequestSchema,
+  aiJobComparisonQuerySchema,
   resumeIdParamSchema,
   technicalSkillSchema,
   softSkillSchema,
@@ -260,4 +368,12 @@ export default {
   ambiguousItemSchema,
   professionalSummarySchema,
   resumeAiProfileSchema,
+  claimSourceTypeSchema,
+  comparisonOverallContextSchema,
+  comparisonStrengthItemSchema,
+  comparisonGapItemSchema,
+  comparisonRequirementItemSchema,
+  comparisonTransferableItemSchema,
+  comparisonRecommendationItemSchema,
+  resumeJobComparisonOutputSchema,
 };
