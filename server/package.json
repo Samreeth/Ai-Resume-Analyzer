@@ -16,7 +16,8 @@
     "test:extractor": "node test/extractor.test.mjs",
     "test:processing": "node test/processing.test.mjs",
     "test:recommendation": "node test/recommendation.test.mjs",
-    "test:gemini": "node test/gemini.test.mjs"
+    "test:gemini": "node test/gemini.test.mjs",
+    "test:resume-ai": "node test/resume.ai.test.mjs"
   },
   "keywords": [
     "resume",
