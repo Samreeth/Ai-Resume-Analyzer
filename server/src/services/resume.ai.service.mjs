@@ -8,9 +8,11 @@
 import { query } from '../config/database.mjs';
 import config from '../config/env.mjs';
 import { computeFileHash } from '../utils/file.util.mjs';
+import { sanitizeResumePii } from '../utils/sanitizer.util.mjs';
 import {
   generateResumeUnderstanding,
   generateResumeJobComparison as callGenerateResumeJobComparison,
+  generatePersonalizedRecommendations as callGeneratePersonalizedRecommendations,
   isGeminiConfigured,
 } from './gemini.service.mjs';
 import { createAnalysis, getAnalysisById } from './analysis.service.mjs';
@@ -18,6 +20,7 @@ import { AI_PROFILE_LIMITS } from '../validators/resume.ai.validator.mjs';
 
 export const AI_DISCLOSURE_VERSION = '2026-10-02';
 export const AI_COMPARISON_CACHE_VERSION = '1.1';
+export const AI_RECOMMENDATIONS_CACHE_VERSION = '1.0';
 
 /**
  * Generate a new AI resume understanding profile or return valid cached profile.
@@ -537,11 +540,382 @@ export const getResumeJobComparison = async ({ userId, resumeId, jobId }) => {
   };
 };
 
+/**
+ * Stage 4: Generate Personalized AI Recommendations for a resume and job,
+ * or return valid cached recommendations.
+ *
+ * @param {object} params
+ * @param {string} params.userId - Authenticated user UUID
+ * @param {string} params.resumeId - Target resume UUID
+ * @param {string} params.jobId - Target job UUID
+ * @param {boolean} params.consent - Explicit user consent flag (must be true)
+ * @param {boolean} [params.forceRefresh=false] - Whether to bypass cache and regenerate
+ * @param {object} [params.clientOverride=null] - Mock client injection for tests
+ * @returns {Promise<object>} Complete recommendations container
+ */
+export const generateResumeAiRecommendations = async ({
+  userId,
+  resumeId,
+  jobId,
+  consent,
+  forceRefresh = false,
+  clientOverride = null,
+}) => {
+  // 1. Enforce explicit user opt-in consent before anything else
+  if (consent !== true) {
+    const err = new Error(
+      'Explicit consent is required to process resume and job text with Gemini AI.'
+    );
+    err.code = 'AI_CONSENT_REQUIRED';
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // 2. Fetch resume with ownership verification (IDOR prevention)
+  const resumeRes = await query(
+    `SELECT resume_id, user_id, extracted_text, extracted_data, extraction_status
+     FROM resumes
+     WHERE resume_id = $1 AND user_id = $2`,
+    [resumeId, userId]
+  );
+
+  if (resumeRes.rowCount === 0) {
+    const err = new Error('Resume not found');
+    err.code = 'RESOURCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const resume = resumeRes.rows[0];
+
+  // 3. Fetch job with ownership verification (IDOR prevention)
+  const jobRes = await query(
+    `SELECT job_id, user_id, title, description
+     FROM job_descriptions
+     WHERE job_id = $1 AND user_id = $2`,
+    [jobId, userId]
+  );
+
+  if (jobRes.rowCount === 0) {
+    const err = new Error('Job description not found');
+    err.code = 'RESOURCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const job = jobRes.rows[0];
+
+  // 4. Validate resume extraction state and content limits
+  if (resume.extraction_status !== 'COMPLETED' || !resume.extracted_text) {
+    const err = new Error(
+      'Resume text extraction is not complete or has failed. Cannot generate AI recommendations.'
+    );
+    err.code = 'RESUME_TEXT_NOT_READY';
+    err.statusCode = 422;
+    throw err;
+  }
+
+  const rawResumeText = resume.extracted_text.trim();
+  if (rawResumeText.length < AI_PROFILE_LIMITS.MIN_INPUT_TEXT_LENGTH) {
+    const err = new Error(
+      `Resume text is too short (${rawResumeText.length} chars). Minimum ${AI_PROFILE_LIMITS.MIN_INPUT_TEXT_LENGTH} chars required.`
+    );
+    err.code = 'RESUME_TEXT_TOO_SHORT';
+    err.statusCode = 422;
+    throw err;
+  }
+
+  if (rawResumeText.length > AI_PROFILE_LIMITS.MAX_INPUT_TEXT_LENGTH) {
+    const err = new Error(
+      `Resume text exceeds maximum limit of ${AI_PROFILE_LIMITS.MAX_INPUT_TEXT_LENGTH} characters.`
+    );
+    err.code = 'RESUME_TEXT_TOO_LONG';
+    err.statusCode = 422;
+    throw err;
+  }
+
+  // 5. Fetch or execute authoritative deterministic analysis
+  const existingAnalysisRes = await query(
+    `SELECT analysis_id
+     FROM analyses
+     WHERE resume_id = $1 AND job_id = $2 AND user_id = $3
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [resumeId, jobId, userId]
+  );
+
+  let analysisRecord;
+  if (existingAnalysisRes.rowCount > 0) {
+    analysisRecord = await getAnalysisById({
+      userId,
+      analysisId: existingAnalysisRes.rows[0].analysis_id,
+    });
+  } else {
+    analysisRecord = await createAnalysis({
+      userId,
+      resumeId,
+      jobId,
+    });
+  }
+
+  const deterministicMatch = {
+    analysis_id: analysisRecord.analysis_id,
+    overall_score: Number(analysisRecord.overall_score),
+    skill_score: Number(analysisRecord.skill_score),
+    matched_required_count: analysisRecord.summary?.matched_required_count ?? 0,
+    missing_required_count: analysisRecord.summary?.missing_required_count ?? 0,
+    matched_preferred_count: analysisRecord.summary?.matched_preferred_count ?? 0,
+    missing_preferred_count: analysisRecord.summary?.missing_preferred_count ?? 0,
+    required_skills_matched: (analysisRecord.skills || [])
+      .filter((s) => s.requirement_type === 'REQUIRED' && s.status === 'MATCHED')
+      .map((s) => s.skill_name)
+      .sort(),
+    required_skills_missing: (analysisRecord.skills || [])
+      .filter((s) => s.requirement_type === 'REQUIRED' && s.status === 'MISSING')
+      .map((s) => s.skill_name)
+      .sort(),
+    preferred_skills_matched: (analysisRecord.skills || [])
+      .filter((s) => s.requirement_type === 'PREFERRED' && s.status === 'MATCHED')
+      .map((s) => s.skill_name)
+      .sort(),
+    preferred_skills_missing: (analysisRecord.skills || [])
+      .filter((s) => s.requirement_type === 'PREFERRED' && s.status === 'MISSING')
+      .map((s) => s.skill_name)
+      .sort(),
+  };
+
+  // 6. Compute Canonical Source Payload Hashes
+  // Exact canonical payloads: sanitized resume, sanitized job, serialized deterministic analysis
+  const sanitizedResume = sanitizeResumePii(rawResumeText);
+  const sanitizedJob = sanitizeResumePii(job.title + '\n' + job.description);
+  const canonicalDeterministicString = JSON.stringify(deterministicMatch);
+
+  const currentResumeHash = computeFileHash(Buffer.from(sanitizedResume, 'utf8'));
+  const currentJobHash = computeFileHash(Buffer.from(sanitizedJob, 'utf8'));
+  const currentDeterministicHash = computeFileHash(Buffer.from(canonicalDeterministicString, 'utf8'));
+
+  // 7. Cache Freshness Check
+  const existingRecommendations = resume.extracted_data?.ai_recommendations?.[jobId];
+
+  if (
+    !forceRefresh &&
+    existingRecommendations &&
+    existingRecommendations.version === AI_RECOMMENDATIONS_CACHE_VERSION &&
+    existingRecommendations.resume_source_hash === currentResumeHash &&
+    existingRecommendations.job_source_hash === currentJobHash &&
+    existingRecommendations.deterministic_match_hash === currentDeterministicHash &&
+    existingRecommendations.recommendations
+  ) {
+    return {
+      ...existingRecommendations,
+      resume_id: resumeId,
+      job_id: jobId,
+      cached: true,
+    };
+  }
+
+  // 8. Feature Gate Check (unless a mock client is injected)
+  if (!clientOverride && !isGeminiConfigured()) {
+    const err = new Error(
+      'Gemini AI features are currently disabled or unconfigured on this server.'
+    );
+    err.code = 'AI_SERVICE_UNAVAILABLE';
+    err.statusCode = 503;
+    throw err;
+  }
+
+  // 9. Execute AI Personalized Recommendations Generation
+  const groundedResult = await callGeneratePersonalizedRecommendations({
+    resumeText: rawResumeText,
+    jobTitle: job.title,
+    jobDescription: job.description,
+    deterministicResults: deterministicMatch,
+    clientOverride,
+  });
+
+  // 10. Assemble Structured Persistence Container
+  const now = new Date().toISOString();
+  const recommendationsRecord = {
+    version: AI_RECOMMENDATIONS_CACHE_VERSION,
+    is_ai_generated: true,
+    model: config.geminiModel,
+    generated_at: now,
+    consent_recorded_at: now,
+    consent_disclosure_version: AI_DISCLOSURE_VERSION,
+    resume_source_hash: currentResumeHash,
+    job_source_hash: currentJobHash,
+    deterministic_match_hash: currentDeterministicHash,
+    analysis_id: analysisRecord.analysis_id,
+    deterministic_match: deterministicMatch,
+    overall_strategy: groundedResult.overall_strategy,
+    recommendations: groundedResult.recommendations,
+  };
+
+  // 11. Atomic Non-Destructive JSONB Update
+  await query(
+    `UPDATE resumes
+     SET extracted_data = jsonb_set(
+       CASE
+         WHEN extracted_data ? 'ai_recommendations' THEN extracted_data
+         ELSE COALESCE(extracted_data, '{}'::jsonb) || '{"ai_recommendations": {}}'::jsonb
+       END,
+       ARRAY['ai_recommendations', $1::text],
+       $2::jsonb,
+       true
+     ),
+     updated_at = CURRENT_TIMESTAMP
+     WHERE resume_id = $3 AND user_id = $4`,
+    [jobId, JSON.stringify(recommendationsRecord), resumeId, userId]
+  );
+
+  return {
+    ...recommendationsRecord,
+    resume_id: resumeId,
+    job_id: jobId,
+    cached: false,
+  };
+};
+
+/**
+ * Retrieve cached AI personalized recommendations for a resume and job.
+ *
+ * @param {object} params
+ * @param {string} params.userId
+ * @param {string} params.resumeId
+ * @param {string} params.jobId
+ * @returns {Promise<object>} Cached AI recommendations
+ */
+export const getResumeAiRecommendations = async ({ userId, resumeId, jobId }) => {
+  const resumeRes = await query(
+    `SELECT resume_id, user_id, extracted_text, extracted_data, extraction_status
+     FROM resumes
+     WHERE resume_id = $1 AND user_id = $2`,
+    [resumeId, userId]
+  );
+
+  if (resumeRes.rowCount === 0) {
+    const err = new Error('Resume not found');
+    err.code = 'RESOURCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const jobRes = await query(
+    `SELECT job_id, user_id, title, description
+     FROM job_descriptions
+     WHERE job_id = $1 AND user_id = $2`,
+    [jobId, userId]
+  );
+
+  if (jobRes.rowCount === 0) {
+    const err = new Error('Job description not found');
+    err.code = 'RESOURCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const resume = resumeRes.rows[0];
+  const job = jobRes.rows[0];
+
+  const recommendations = resume.extracted_data?.ai_recommendations?.[jobId];
+
+  if (!recommendations || !recommendations.recommendations) {
+    const err = new Error(
+      'No AI recommendations found for this resume and job. Please generate recommendations first via POST /api/resumes/:resumeId/ai-recommendations.'
+    );
+    err.code = 'AI_RECOMMENDATIONS_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Cache Version Check
+  if (recommendations.version !== AI_RECOMMENDATIONS_CACHE_VERSION) {
+    const err = new Error(
+      'The cached AI recommendations were generated under an older schema version. Please regenerate via POST /api/resumes/:resumeId/ai-recommendations.'
+    );
+    err.code = 'AI_RECOMMENDATIONS_STALE';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Cache Stale Invalidation Check
+  const currentResumeHash = computeFileHash(Buffer.from(sanitizeResumePii(resume.extracted_text || ''), 'utf8'));
+  const currentJobHash = computeFileHash(Buffer.from(sanitizeResumePii(job.title + '\n' + job.description), 'utf8'));
+
+  // Fetch latest deterministic analysis if one exists to verify deterministic_match_hash freshness
+  const existingAnalysisRes = await query(
+    `SELECT analysis_id
+     FROM analyses
+     WHERE resume_id = $1 AND job_id = $2 AND user_id = $3
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [resumeId, jobId, userId]
+  );
+
+  let currentDeterministicHash = null;
+  if (existingAnalysisRes.rowCount > 0) {
+    const analysisRecord = await getAnalysisById({
+      userId,
+      analysisId: existingAnalysisRes.rows[0].analysis_id,
+    });
+    const deterministicMatch = {
+      analysis_id: analysisRecord.analysis_id,
+      overall_score: Number(analysisRecord.overall_score),
+      skill_score: Number(analysisRecord.skill_score),
+      matched_required_count: analysisRecord.summary?.matched_required_count ?? 0,
+      missing_required_count: analysisRecord.summary?.missing_required_count ?? 0,
+      matched_preferred_count: analysisRecord.summary?.matched_preferred_count ?? 0,
+      missing_preferred_count: analysisRecord.summary?.missing_preferred_count ?? 0,
+      required_skills_matched: (analysisRecord.skills || [])
+        .filter((s) => s.requirement_type === 'REQUIRED' && s.status === 'MATCHED')
+        .map((s) => s.skill_name)
+        .sort(),
+      required_skills_missing: (analysisRecord.skills || [])
+        .filter((s) => s.requirement_type === 'REQUIRED' && s.status === 'MISSING')
+        .map((s) => s.skill_name)
+        .sort(),
+      preferred_skills_matched: (analysisRecord.skills || [])
+        .filter((s) => s.requirement_type === 'PREFERRED' && s.status === 'MATCHED')
+        .map((s) => s.skill_name)
+        .sort(),
+      preferred_skills_missing: (analysisRecord.skills || [])
+        .filter((s) => s.requirement_type === 'PREFERRED' && s.status === 'MISSING')
+        .map((s) => s.skill_name)
+        .sort(),
+    };
+    currentDeterministicHash = computeFileHash(Buffer.from(JSON.stringify(deterministicMatch), 'utf8'));
+  }
+
+  if (
+    recommendations.resume_source_hash !== currentResumeHash ||
+    recommendations.job_source_hash !== currentJobHash ||
+    (currentDeterministicHash && recommendations.deterministic_match_hash !== currentDeterministicHash)
+  ) {
+    const err = new Error(
+      'The cached AI recommendations are stale because the resume, job description, or deterministic analysis has changed. Please regenerate via POST /api/resumes/:resumeId/ai-recommendations.'
+    );
+    err.code = 'AI_RECOMMENDATIONS_STALE';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return {
+    ...recommendations,
+    resume_id: resumeId,
+    job_id: jobId,
+    cached: true,
+  };
+};
+
 export default {
   AI_DISCLOSURE_VERSION,
   AI_COMPARISON_CACHE_VERSION,
+  AI_RECOMMENDATIONS_CACHE_VERSION,
   generateResumeAiProfile,
   getResumeAiProfile,
   generateResumeJobComparison,
   getResumeJobComparison,
+  generateResumeAiRecommendations,
+  getResumeAiRecommendations,
 };
+

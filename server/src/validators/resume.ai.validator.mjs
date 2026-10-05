@@ -353,6 +353,135 @@ export const resumeJobComparisonOutputSchema = z.object({
   recommendations: z.array(comparisonRecommendationItemSchema).default([]),
 });
 
+/**
+ * ============================================================================
+ * Stage 4: Personalized Recommendations Schemas
+ * ============================================================================
+ */
+
+export const recommendationCategorySchema = z.enum([
+  'SKILL_GAP',
+  'RESUME_STRENGTH',
+  'JOB_REQUIREMENT',
+]);
+
+export const recommendationPrioritySchema = z.enum([
+  'HIGH',
+  'MEDIUM',
+  'LOW',
+]);
+
+/**
+ * Request schema for POST /api/resumes/:resumeId/ai-recommendations
+ */
+export const aiRecommendationsRequestSchema = z.preprocess((val) => {
+  if (val && typeof val === 'object') {
+    const raw = { ...val };
+    if (!raw.jobId && raw.job_id) raw.jobId = raw.job_id;
+    if (raw.force_refresh === undefined && raw.forceRefresh !== undefined) {
+      raw.force_refresh = raw.forceRefresh;
+    }
+    return raw;
+  }
+  return val;
+}, z.object({
+  jobId: z.string({ required_error: 'Job ID is required' }).uuid({ message: 'Invalid job ID format. Must be a valid UUID' }),
+  consent: z.literal(true, {
+    errorMap: () => ({
+      message: 'Explicit consent is required to process resume and job text with Gemini AI.',
+    }),
+  }),
+  force_refresh: z.boolean().optional().default(false),
+}));
+
+/**
+ * Query schema for GET /api/resumes/:resumeId/ai-recommendations
+ */
+export const aiRecommendationsQuerySchema = z.preprocess((val) => {
+  if (val && typeof val === 'object') {
+    const raw = { ...val };
+    if (!raw.jobId && raw.job_id) raw.jobId = raw.job_id;
+    return raw;
+  }
+  return val;
+}, z.object({
+  jobId: z.string({ required_error: 'Job ID is required' }).uuid({ message: 'Invalid job ID format. Must be a valid UUID' }),
+}));
+
+/**
+ * Single recommendation item schema with strict 1:1 category <-> source_type
+ * and evidence snippet invariants.
+ */
+export const recommendationItemSchema = z.object({
+  id: z.string().min(1),
+  category: recommendationCategorySchema,
+  source_type: claimSourceTypeSchema,
+  title: z.string().min(1).max(200).trim(),
+  recommendation: z.string().min(1).max(1000).trim(),
+  rationale: z.string().min(1).max(1000).trim(),
+  priority: recommendationPrioritySchema,
+  evidence_snippet: z.string().max(500).nullable().optional(),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+}).superRefine((data, ctx) => {
+  // 1:1 Category <-> Source Type rules
+  if (data.category === 'SKILL_GAP' && data.source_type !== 'DETERMINISTIC_ANALYSIS') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'SKILL_GAP recommendations must have source_type DETERMINISTIC_ANALYSIS',
+      path: ['source_type'],
+    });
+  }
+  if (data.category === 'RESUME_STRENGTH' && data.source_type !== 'RESUME_EVIDENCE') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'RESUME_STRENGTH recommendations must have source_type RESUME_EVIDENCE',
+      path: ['source_type'],
+    });
+  }
+  if (data.category === 'JOB_REQUIREMENT' && data.source_type !== 'JOB_REQUIREMENT') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'JOB_REQUIREMENT recommendations must have source_type JOB_REQUIREMENT',
+      path: ['source_type'],
+    });
+  }
+
+  // Evidence snippet invariants
+  if (data.source_type === 'DETERMINISTIC_ANALYSIS' && data.evidence_snippet !== null && data.evidence_snippet !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'DETERMINISTIC_ANALYSIS recommendations must have null evidence_snippet',
+      path: ['evidence_snippet'],
+    });
+  }
+  if (data.source_type === 'RESUME_EVIDENCE' && (!data.evidence_snippet || data.evidence_snippet.trim().length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'RESUME_EVIDENCE recommendations require a non-empty evidence_snippet',
+      path: ['evidence_snippet'],
+    });
+  }
+});
+
+/**
+ * Overall strategy synthesis schema.
+ * Note: synthesis-only, no individual source_type or evidence_snippet.
+ */
+export const overallStrategySchema = z.object({
+  summary: z.string().min(1).max(2000).trim(),
+  verification_status: z.enum(['VERIFIED', 'UNVERIFIED']).default('UNVERIFIED'),
+  unverified_reason: z.string().nullable().optional().default(null),
+});
+
+/**
+ * Full output schema for Stage 4 AI recommendations
+ */
+export const resumeAiRecommendationsOutputSchema = z.object({
+  overall_strategy: overallStrategySchema,
+  recommendations: z.array(recommendationItemSchema).min(1).max(25),
+});
+
 export default {
   AI_PROFILE_LIMITS,
   aiProfileRequestSchema,
@@ -376,4 +505,12 @@ export default {
   comparisonTransferableItemSchema,
   comparisonRecommendationItemSchema,
   resumeJobComparisonOutputSchema,
+  // Stage 4 exports
+  recommendationCategorySchema,
+  recommendationPrioritySchema,
+  aiRecommendationsRequestSchema,
+  aiRecommendationsQuerySchema,
+  recommendationItemSchema,
+  overallStrategySchema,
+  resumeAiRecommendationsOutputSchema,
 };

@@ -10,7 +10,11 @@
     "db:migrate": "node src/database/migrate.mjs",
     "db:seed": "node src/database/seed.mjs",
     "db:verify": "node src/database/verify.mjs",
+    "test": "node test/auth.test.mjs && node test/extractor.test.mjs && node test/processing.test.mjs && node test/resume.test.mjs && node test/skill.test.mjs && node test/job.test.mjs && node test/analysis.test.mjs && node test/recommendation.test.mjs && node test/live_e2e_verification.mjs && node test/gemini.test.mjs && node test/resume.ai.test.mjs && node test/job.ai.test.mjs && node test/recommendation.ai.test.mjs && node src/database/verify.mjs",
     "test:auth": "node test/auth.test.mjs",
+    "test:skill": "node test/skill.test.mjs",
+    "test:job": "node test/job.test.mjs",
+    "test:analysis": "node test/analysis.test.mjs",
     "test:e2e": "node test/live_e2e_verification.mjs",
     "test:resume": "node test/resume.test.mjs",
     "test:extractor": "node test/extractor.test.mjs",
@@ -18,7 +22,8 @@
     "test:recommendation": "node test/recommendation.test.mjs",
     "test:gemini": "node test/gemini.test.mjs",
     "test:resume-ai": "node test/resume.ai.test.mjs",
-    "test:job-ai": "node test/job.ai.test.mjs"
+    "test:job-ai": "node test/job.ai.test.mjs",
+    "test:recommendation-ai": "node test/recommendation.ai.test.mjs"
   },
   "keywords": [
     "resume",

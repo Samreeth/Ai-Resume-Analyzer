@@ -1158,9 +1158,384 @@ export const verifyComparisonGrounding = (
   };
 };
 
+/**
+ * Stage 4: Grounding Verification for Personalized Recommendations
+ *
+ * Enforces:
+ * 1. Category <-> Source Type invariants:
+ *    - SKILL_GAP -> DETERMINISTIC_ANALYSIS (null snippet)
+ *    - RESUME_STRENGTH -> RESUME_EVIDENCE (valid snippet in resume, no absence claim, no redaction marker)
+ *    - JOB_REQUIREMENT -> JOB_REQUIREMENT (valid snippet in job if present; NEVER candidate possession)
+ * 2. Deterministic priority authority:
+ *    - Missing REQUIRED -> HIGH
+ *    - Missing PREFERRED -> MEDIUM
+ *    - Inconsistent priorities are locked to deterministic value and marked UNVERIFIED
+ * 3. JOB_REQUIREMENT candidate possession non-attribution:
+ *    - Claiming candidate possession under JOB_REQUIREMENT -> UNVERIFIED
+ * 4. Overall Strategy synthesis-only invariant:
+ *    - Must not introduce unsupported candidate facts (leadership, years, skills, certifications,
+ *      metrics/achievements, projects, education, domain experience)
+ *    - Contradicting deterministic missing skills -> UNVERIFIED
+ *    - All recommendations ungrounded -> UNVERIFIED
+ *
+ * @param {object} params
+ * @param {Array} params.recommendations
+ * @param {object} params.overall_strategy
+ * @param {string} params.resumeText
+ * @param {string} [params.jobDescription='']
+ * @param {object} [params.deterministicResults=null]
+ * @returns {object} Grounded recommendations output
+ */
+export const verifyRecommendationGrounding = ({
+  recommendations = [],
+  overall_strategy = {},
+  resumeText = '',
+  jobDescription = '',
+  deterministicResults = null,
+} = {}) => {
+  const normResume = normalizeText(resumeText);
+  const normJob = normalizeText(jobDescription);
+
+  const REDACTION_MARKER_REGEX = /\[[A-Z_\s]+REDACTED\]/i;
+  const containsRedactionMarker = (str) => typeof str === 'string' && REDACTION_MARKER_REGEX.test(str);
+
+  const isAbsenceClaim = (text) => {
+    if (typeof text !== 'string') return false;
+    return /\b(no|none|lack|lacks|lacking|missing|without|not found|not identified|no verified)\b/i.test(text);
+  };
+
+  // 1. Build deterministic skill lookup sets
+  const requiredSkillsMissing = new Set();
+  const requiredSkillsMatched = new Set();
+  const preferredSkillsMissing = new Set();
+  const preferredSkillsMatched = new Set();
+
+  if (deterministicResults) {
+    if (Array.isArray(deterministicResults.skills)) {
+      for (const s of deterministicResults.skills) {
+        const normName = normalizeText(s.skill_name);
+        if (s.requirement_type === 'REQUIRED') {
+          if (s.status === 'MATCHED') requiredSkillsMatched.add(normName);
+          else if (s.status === 'MISSING') requiredSkillsMissing.add(normName);
+        } else if (s.requirement_type === 'PREFERRED') {
+          if (s.status === 'MATCHED') preferredSkillsMatched.add(normName);
+          else if (s.status === 'MISSING') preferredSkillsMissing.add(normName);
+        }
+      }
+    }
+    if (Array.isArray(deterministicResults.required_skills_missing)) {
+      for (const s of deterministicResults.required_skills_missing) requiredSkillsMissing.add(normalizeText(s));
+    }
+    if (Array.isArray(deterministicResults.required_skills_matched)) {
+      for (const s of deterministicResults.required_skills_matched) requiredSkillsMatched.add(normalizeText(s));
+    }
+    if (Array.isArray(deterministicResults.preferred_skills_missing)) {
+      for (const s of deterministicResults.preferred_skills_missing) preferredSkillsMissing.add(normalizeText(s));
+    }
+    if (Array.isArray(deterministicResults.preferred_skills_matched)) {
+      for (const s of deterministicResults.preferred_skills_matched) preferredSkillsMatched.add(normalizeText(s));
+    }
+    if (Array.isArray(deterministicResults.missing_required)) {
+      for (const s of deterministicResults.missing_required) requiredSkillsMissing.add(normalizeText(s));
+    }
+    if (Array.isArray(deterministicResults.matched_required)) {
+      for (const s of deterministicResults.matched_required) requiredSkillsMatched.add(normalizeText(s));
+    }
+  }
+
+  const allDeterministicMissing = new Set([...requiredSkillsMissing, ...preferredSkillsMissing]);
+  const allDeterministicMatched = new Set([...requiredSkillsMatched, ...preferredSkillsMatched]);
+
+  // Helper: check if text indicates candidate possession of a skill/requirement
+  const claimsCandidatePossession = (text) => {
+    if (typeof text !== 'string') return false;
+    const possessionRegex = /\b(?:candidate|applicant|resume|you)\s+(?:has|possesses|demonstrates|features|meets|holds|exhibits|brings|showcases|already\s+has)\b/i;
+    const candidateExperienceRegex = /\b(?:candidate's|applicant's|your)\s+(?:strong|proven|extensive|verified|deep|hands-on|solid)\s+(?:experience|skill|background|knowledge)\b/i;
+    const directClaimRegex = /\b(?:already\s+possesses|already\s+mastered|has\s+proven|demonstrated\s+mastery|fully\s+meets)\b/i;
+    return possessionRegex.test(text) || candidateExperienceRegex.test(text) || directClaimRegex.test(text);
+  };
+
+  // 2. Ground recommendation items
+  const groundedRecommendations = (Array.isArray(recommendations) ? recommendations : []).map((item) => {
+    const category = item.category;
+    const sourceType = item.source_type;
+    const title = String(item.title || '').trim();
+    const recommendation = String(item.recommendation || '').trim();
+    const rationale = String(item.rationale || '').trim();
+    let priority = item.priority;
+    let snippet = item.evidence_snippet ? String(item.evidence_snippet).trim() : null;
+
+    let verification_status = 'VERIFIED';
+    let unverified_reason = null;
+
+    // Check A: Category <-> Source Type
+    if (category === 'SKILL_GAP') {
+      if (sourceType !== 'DETERMINISTIC_ANALYSIS') {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'SKILL_GAP recommendations must have source_type DETERMINISTIC_ANALYSIS';
+      }
+      snippet = null; // Enforce null evidence_snippet
+
+      // Check contradiction with deterministic matches
+      const combinedText = normalizeText(`${title} ${recommendation} ${rationale}`);
+      for (const matchedSkill of allDeterministicMatched) {
+        if (matchedSkill.length > 2 && combinedText.includes(matchedSkill)) {
+          // Check if this matched skill is also listed as missing (should not happen, but safeguard)
+          if (!allDeterministicMissing.has(matchedSkill)) {
+            // Contradiction: skill is matched, not missing
+            if (combinedText.includes(`missing ${matchedSkill}`) || combinedText.includes(`gap ${matchedSkill}`) || combinedText.includes(`lack of ${matchedSkill}`)) {
+              verification_status = 'UNVERIFIED';
+              unverified_reason = `Claimed gap contradicts deterministic match: skill '${matchedSkill}' is present in resume`;
+            }
+          }
+        }
+      }
+
+      // Priority Authority Enforcement
+      let isRequiredGap = false;
+      let isPreferredGap = false;
+      for (const reqSkill of requiredSkillsMissing) {
+        if (reqSkill.length > 1 && combinedText.includes(reqSkill)) {
+          isRequiredGap = true;
+          break;
+        }
+      }
+      if (!isRequiredGap) {
+        for (const prefSkill of preferredSkillsMissing) {
+          if (prefSkill.length > 1 && combinedText.includes(prefSkill)) {
+            isPreferredGap = true;
+            break;
+          }
+        }
+      }
+
+      if (isRequiredGap) {
+        if (priority !== 'HIGH') {
+          priority = 'HIGH'; // Lock to deterministic value
+          verification_status = 'UNVERIFIED';
+          unverified_reason = 'Priority overridden to match deterministic requirement type (REQUIRED -> HIGH)';
+        }
+      } else if (isPreferredGap) {
+        if (priority !== 'MEDIUM') {
+          priority = 'MEDIUM'; // Lock to deterministic value
+          verification_status = 'UNVERIFIED';
+          unverified_reason = 'Priority overridden to match deterministic requirement type (PREFERRED -> MEDIUM)';
+        }
+      }
+    } else if (category === 'RESUME_STRENGTH') {
+      if (sourceType !== 'RESUME_EVIDENCE') {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'RESUME_STRENGTH recommendations must have source_type RESUME_EVIDENCE';
+      }
+
+      if (!snippet) {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'Missing evidence snippet for claimed resume strength';
+      } else if (containsRedactionMarker(snippet)) {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'Redaction markers cannot be accepted as resume evidence';
+      } else if (isAbsenceClaim(recommendation) || isAbsenceClaim(rationale) || isAbsenceClaim(title)) {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'Absence of evidence claims cannot be attributed to RESUME_EVIDENCE without verbatim source text';
+      } else {
+        const snippetCheck = verifySnippet(snippet, normResume);
+        if (!snippetCheck.verified) {
+          verification_status = 'UNVERIFIED';
+          unverified_reason = snippetCheck.reason || 'Evidence snippet not found in candidate resume text';
+        }
+      }
+    } else if (category === 'JOB_REQUIREMENT') {
+      if (sourceType !== 'JOB_REQUIREMENT') {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'JOB_REQUIREMENT recommendations must have source_type JOB_REQUIREMENT';
+      }
+
+      if (snippet && !normJob.includes(normalizeText(snippet))) {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'Evidence snippet not found in job description';
+      }
+
+      // JOB_REQUIREMENT candidate possession non-attribution
+      if (claimsCandidatePossession(recommendation) || claimsCandidatePossession(rationale)) {
+        verification_status = 'UNVERIFIED';
+        unverified_reason = 'Job requirement cannot be asserted as candidate possession';
+      }
+    }
+
+    return {
+      id: item.id || `rec-${Math.random().toString(36).substr(2, 9)}`,
+      category,
+      source_type: sourceType,
+      title,
+      recommendation,
+      rationale,
+      priority,
+      evidence_snippet: snippet,
+      verification_status,
+      unverified_reason,
+    };
+  });
+
+  // 3. Ground overall_strategy (Generic Invariant)
+  const rawStrategySummary = String(overall_strategy?.summary || '').trim();
+  let strategyStatus = 'VERIFIED';
+  let strategyReason = null;
+
+  if (!rawStrategySummary) {
+    strategyStatus = 'UNVERIFIED';
+    strategyReason = 'Missing overall strategy summary';
+  } else if (groundedRecommendations.length > 0 && groundedRecommendations.every((r) => r.verification_status === 'UNVERIFIED')) {
+    // If all recommendations are ungrounded -> strategy must be UNVERIFIED
+    strategyStatus = 'UNVERIFIED';
+    strategyReason = 'Strategy based entirely on ungrounded recommendations';
+  } else {
+    const normStrategy = normalizeText(rawStrategySummary);
+
+    // Check A: Contradicts deterministic missing skills
+    for (const missingSkill of allDeterministicMissing) {
+      if (missingSkill.length > 2) {
+        // e.g., claims candidate has strong AWS experience or production AWS when AWS is missing
+        const skillPossessionPatterns = [
+          new RegExp(`\\b(?:strong|production|proven|extensive|solid|deep|hands-on)\\s+${missingSkill}\\b`, 'i'),
+          new RegExp(`\\b${missingSkill}\\s+(?:experience|mastery|skills?|expertise)\\b`, 'i'),
+          new RegExp(`\\b(?:proficient|skilled|experienced)\\s+in\\s+${missingSkill}\\b`, 'i'),
+          new RegExp(`\\bleveraging\\s+(?:your|candidate's)?\\s+${missingSkill}\\b`, 'i'),
+        ];
+        if (skillPossessionPatterns.some((pattern) => pattern.test(rawStrategySummary))) {
+          strategyStatus = 'UNVERIFIED';
+          strategyReason = `Strategy contradicts deterministic missing skill: '${missingSkill}'`;
+          break;
+        }
+      }
+    }
+
+    // Check B: Generic candidate factual claims invariant
+    // Must be traceable to grounded RESUME_EVIDENCE items, deterministic facts, or normResume
+    if (strategyStatus === 'VERIFIED') {
+      const groundedSnippets = groundedRecommendations
+        .filter((r) => r.verification_status === 'VERIFIED' && r.evidence_snippet)
+        .map((r) => normalizeText(r.evidence_snippet))
+        .join(' ');
+      const groundedResumeCorpus = `${normResume} ${groundedSnippets}`;
+
+      // B1: Leadership claims
+      if (/\b(?:extensive\s+leadership|strong\s+leadership|leadership\s+experience|engineering\s+director|lead\s+architect|head\s+of\s+engineering|managed\s+teams?|led\s+teams?)\b/i.test(rawStrategySummary)) {
+        const hasLeadershipSupport = /\b(?:leadership|leader|managed\s+teams?|lead\s+architect|director)\b/i.test(groundedResumeCorpus);
+        if (!hasLeadershipSupport) {
+          strategyStatus = 'UNVERIFIED';
+          strategyReason = 'Strategy introduces unsupported candidate factual claims (leadership)';
+        }
+      }
+
+      // B2: Years of experience claims
+      if (strategyStatus === 'VERIFIED') {
+        const yearsMatch = rawStrategySummary.match(/\b(\d+)\+?\s*(?:years?|yrs?)\b/i);
+        if (yearsMatch) {
+          const claimedYears = yearsMatch[1];
+          const hasYearsSupport =
+            groundedResumeCorpus.includes(`${claimedYears} year`) ||
+            groundedResumeCorpus.includes(`${claimedYears} yr`) ||
+            groundedResumeCorpus.includes(`${claimedYears}+ year`);
+          if (!hasYearsSupport) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (${claimedYears} years experience)`;
+          }
+        }
+      }
+
+      // B3: Metrics / Achievements claims (e.g. 50% improvement, $10M budget, 10k req/s)
+      if (strategyStatus === 'VERIFIED') {
+        const metricMatch = rawStrategySummary.match(/\b(?:\d+%\s*(?:reduction|improvement|increase|growth|latency)|reduced\s+latency|scaled\s+(?:systems?|services?)\s+to\s+\d+|processing\s+\d+\s*(?:k|m|req)|managed\s+\$(?:\d+|[\d.]+m))\b/i);
+        if (metricMatch) {
+          const metricText = normalizeText(metricMatch[0]);
+          if (!groundedResumeCorpus.includes(metricText)) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (metric/achievement: ${metricMatch[0]})`;
+          }
+        }
+      }
+
+      // B4: Unsupported projects / architectures
+      if (strategyStatus === 'VERIFIED') {
+        const projectMatch = rawStrategySummary.match(/\b(?:automated\s+fraud|microservices?\s+platform|migration\s+to\s+microservices?|e-commerce\s+platform|data\s+pipeline)\b/i);
+        if (projectMatch) {
+          const projectText = normalizeText(projectMatch[0]);
+          if (!groundedResumeCorpus.includes(projectText)) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (project: ${projectMatch[0]})`;
+          }
+        }
+      }
+
+      // B5: Unsupported education / degrees (Master's degree, Stanford, MIT, PhD)
+      if (strategyStatus === 'VERIFIED') {
+        const eduMatch = rawStrategySummary.match(/\b(?:master's|masters\s+degree|phd|bachelor's|degree\s+in\s+machine\s+learning|stanford|mit|harvard)\b/i);
+        if (eduMatch) {
+          const eduText = normalizeText(eduMatch[0]);
+          if (!groundedResumeCorpus.includes(eduText)) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (education: ${eduMatch[0]})`;
+          }
+        }
+      }
+
+      // B6: Unsupported domain expertise (FinTech banking, healthcare regulatory, etc.)
+      if (strategyStatus === 'VERIFIED') {
+        const domainMatch = rawStrategySummary.match(/\b(?:fintech|banking|healthcare|regulatory|compliance)\s+(?:domain|expertise|experience)\b/i);
+        if (domainMatch) {
+          const domainText = normalizeText(domainMatch[0]);
+          if (!groundedResumeCorpus.includes(domainText)) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (domain: ${domainMatch[0]})`;
+          }
+        }
+      }
+
+      // B7: Unsupported technologies claimed as candidate capability
+      if (strategyStatus === 'VERIFIED') {
+        const techMatch = rawStrategySummary.match(/\b(?:leveraging\s+(?:your|candidate's)?|with\s+your|using\s+your|extensive\s+experience\s+in)\s+([a-zA-Z0-9+#]+)\b/i);
+        if (techMatch) {
+          const claimedTech = normalizeText(techMatch[1]);
+          const techInResume = groundedResumeCorpus.includes(claimedTech);
+          const techInMatched = allDeterministicMatched.has(claimedTech);
+          if (!techInResume && !techInMatched) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (technology: ${techMatch[1]})`;
+          }
+        }
+      }
+
+      // B8: Unsupported certifications
+      if (strategyStatus === 'VERIFIED') {
+        const certMatch = rawStrategySummary.match(/\b(?:solutions\s+architect|pmp\s+certified|certified\s+scrum\s+master|aws\s+certified)\b/i);
+        if (certMatch) {
+          const certText = normalizeText(certMatch[0]);
+          if (!groundedResumeCorpus.includes(certText)) {
+            strategyStatus = 'UNVERIFIED';
+            strategyReason = `Strategy introduces unsupported candidate factual claims (certification: ${certMatch[0]})`;
+          }
+        }
+      }
+    }
+  }
+
+  const groundedOverallStrategy = {
+    summary: rawStrategySummary,
+    verification_status: strategyStatus,
+    unverified_reason: strategyReason,
+  };
+
+  return {
+    overall_strategy: groundedOverallStrategy,
+    recommendations: groundedRecommendations,
+  };
+};
+
 export default {
   normalizeText,
   verifySnippet,
   verifyProfileGrounding,
   verifyComparisonGrounding,
+  verifyRecommendationGrounding,
 };
+

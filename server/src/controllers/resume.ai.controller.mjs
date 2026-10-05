@@ -8,6 +8,8 @@ import {
   aiProfileRequestSchema,
   aiJobComparisonRequestSchema,
   aiJobComparisonQuerySchema,
+  aiRecommendationsRequestSchema,
+  aiRecommendationsQuerySchema,
   resumeIdParamSchema,
 } from '../validators/resume.ai.validator.mjs';
 
@@ -106,9 +108,60 @@ export const getAiJobComparison = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle AI personalized recommendations generation request (Stage 4)
+ * POST /api/resumes/:resumeId/ai-recommendations
+ */
+export const generateAiRecommendations = async (req, res, next) => {
+  try {
+    const { resumeId } = resumeIdParamSchema.parse(req.params);
+    const { jobId, consent, force_refresh } = aiRecommendationsRequestSchema.parse(req.body);
+
+    const result = await resumeAiService.generateResumeAiRecommendations({
+      userId: req.user.userId,
+      resumeId,
+      jobId,
+      consent,
+      forceRefresh: force_refresh,
+    });
+
+    const statusCode = result.cached ? 200 : 201;
+    const message = result.cached
+      ? 'Cached AI recommendations retrieved successfully'
+      : 'AI recommendations generated successfully';
+
+    return sendSuccess(res, result, message, statusCode);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handle retrieving cached AI personalized recommendations (Stage 4)
+ * GET /api/resumes/:resumeId/ai-recommendations
+ */
+export const getAiRecommendations = async (req, res, next) => {
+  try {
+    const { resumeId } = resumeIdParamSchema.parse(req.params);
+    const { jobId } = aiRecommendationsQuerySchema.parse(req.query);
+
+    const result = await resumeAiService.getResumeAiRecommendations({
+      userId: req.user.userId,
+      resumeId,
+      jobId,
+    });
+
+    return sendSuccess(res, result, 'Cached AI recommendations retrieved successfully', 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   generateAiProfile,
   getAiProfile,
   generateAiJobComparison,
   getAiJobComparison,
+  generateAiRecommendations,
+  getAiRecommendations,
 };

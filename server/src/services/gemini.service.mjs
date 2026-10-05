@@ -12,9 +12,14 @@ import { sanitizeResumePii, sanitizeModelOutputPii } from '../utils/sanitizer.ut
 import {
   resumeAiProfileSchema,
   resumeJobComparisonOutputSchema,
+  resumeAiRecommendationsOutputSchema,
   AI_PROFILE_LIMITS,
 } from '../validators/resume.ai.validator.mjs';
-import { verifyProfileGrounding, verifyComparisonGrounding } from '../utils/grounding.util.mjs';
+import {
+  verifyProfileGrounding,
+  verifyComparisonGrounding,
+  verifyRecommendationGrounding,
+} from '../utils/grounding.util.mjs';
 
 let testMockClient = null;
 
@@ -605,6 +610,208 @@ export const generateResumeJobComparison = async ({
 };
 
 /**
+ * Stage 4: Extract personalized recommendations using Gemini AI.
+ *
+ * @param {object} params
+ * @param {string} params.resumeText
+ * @param {string} [params.jobTitle='']
+ * @param {string} params.jobDescription
+ * @param {object} [params.deterministicResults=null]
+ * @param {AbortSignal} [params.signal=null]
+ * @param {object} [params.options={}]
+ * @param {object} [params.clientOverride=null]
+ * @returns {Promise<object>} Grounded recommendations result
+ */
+export const extractPersonalizedRecommendations = async ({
+  resumeText,
+  jobTitle = '',
+  jobDescription,
+  deterministicResults = null,
+  signal = null,
+  options = {},
+  clientOverride = null,
+}) => {
+  const client = clientOverride || getGeminiClient();
+
+  const sanitizedResumeText = sanitizeResumePii(resumeText);
+  const sanitizedJobText = sanitizeResumePii(jobDescription);
+
+  const systemInstruction = `You are an expert AI Career Advisor and Technical Resume Coach in an enterprise recruitment system.
+Your mission is to analyze the candidate's sanitized resume against a specific job description and authoritative deterministic match results, producing personalized, actionable recommendations.
+
+CRITICAL ARCHITECTURAL CONSTRAINTS:
+1. DETERMINISTIC AUTHORITY:
+   - The <DETERMINISTIC_ANALYSIS> section is authoritative. You must NEVER override, contradict, or re-calculate match scores or missing skill determinations.
+2. RECOMMENDATION CATEGORY & SOURCE_TYPE (STRICT 1:1 MAPPING):
+   - "SKILL_GAP": Must have source_type "DETERMINISTIC_ANALYSIS" and evidence_snippet: null.
+     - Must address an authoritative missing skill from <DETERMINISTIC_ANALYSIS>.
+     - If the skill is a missing REQUIRED skill, priority MUST be "HIGH".
+     - If the skill is a missing PREFERRED skill, priority MUST be "MEDIUM".
+   - "RESUME_STRENGTH": Must have source_type "RESUME_EVIDENCE" and a non-empty evidence_snippet matching verbatim text from <CANDIDATE_RESUME>.
+     - Must recommend ways to emphasize, elevate, or leverage this verified strength.
+     - Never use absence-of-evidence as a strength.
+   - "JOB_REQUIREMENT": Must have source_type "JOB_REQUIREMENT".
+     - An evidence_snippet may quote the job requirement from <JOB_DESCRIPTION>.
+     - MUST NEVER claim or imply that the candidate possesses this requirement. It describes what the employer requires and advises preparation.
+3. OVERALL STRATEGY (SYNTHESIS-ONLY):
+   - overall_strategy.summary must be an executive synthesis connecting verified strengths and deterministic gaps to the role.
+   - It MUST NOT introduce ANY new factual candidate claim not supported by the grounded resume or deterministic facts.
+   - Specifically, NEVER introduce unsupported candidate skills, technologies, years of experience, job titles, achievements, metrics, certifications, projects, leadership experience, domain expertise, or education.
+   - NEVER claim the candidate has a missing skill from <DETERMINISTIC_ANALYSIS>.
+4. PII PROTECTION:
+   - Never quote or extract personal identifiers (names, emails, phones, addresses, postal/PIN codes). Never cite redaction markers like [EMAIL REDACTED] as evidence.
+5. Return ONLY a valid JSON object matching the requested schema.`;
+
+  const matchedReq =
+    deterministicResults?.matched_required?.join(', ') ||
+    deterministicResults?.required_skills_matched?.join(', ') ||
+    'None';
+  const missingReq =
+    deterministicResults?.missing_required?.join(', ') ||
+    deterministicResults?.required_skills_missing?.join(', ') ||
+    'None';
+  const matchedPref =
+    deterministicResults?.matched_preferred?.join(', ') ||
+    deterministicResults?.preferred_skills_matched?.join(', ') ||
+    'None';
+  const missingPref =
+    deterministicResults?.missing_preferred?.join(', ') ||
+    deterministicResults?.preferred_skills_missing?.join(', ') ||
+    'None';
+
+  const promptContents = `<JOB_DESCRIPTION>
+Job Title: ${jobTitle}
+Description:
+${sanitizedJobText}
+</JOB_DESCRIPTION>
+
+<DETERMINISTIC_ANALYSIS>
+Overall Match Score: ${deterministicResults?.overall_score || 0}%
+Required Skills Matched: ${matchedReq}
+Required Skills Missing: ${missingReq}
+Preferred Skills Matched: ${matchedPref}
+Preferred Skills Missing: ${missingPref}
+</DETERMINISTIC_ANALYSIS>
+
+<CANDIDATE_RESUME>
+${sanitizedResumeText}
+</CANDIDATE_RESUME>`;
+
+  const modelName = options.model || config.geminiModel;
+
+  let response;
+  try {
+    response = await client.models.generateContent({
+      model: modelName,
+      contents: promptContents,
+      config: {
+        responseMimeType: 'application/json',
+        systemInstruction,
+        abortSignal: signal,
+      },
+    });
+  } catch (providerErr) {
+    if (providerErr.name === 'AbortError' || providerErr.name === 'RequestAbortedError') {
+      const timeoutErr = new Error('Gemini request timed out or was aborted.');
+      timeoutErr.code = 'GEMINI_TIMEOUT';
+      timeoutErr.statusCode = 504;
+      throw sanitizeGeminiError(timeoutErr);
+    }
+    if (
+      providerErr.status === 429 ||
+      providerErr.code === 429 ||
+      String(providerErr.message).includes('429')
+    ) {
+      const rateErr = new Error('Gemini AI quota or rate limit exceeded. Please retry later.');
+      rateErr.code = 'AI_RATE_LIMITED';
+      rateErr.statusCode = 429;
+      throw sanitizeGeminiError(rateErr);
+    }
+    throw sanitizeGeminiError(providerErr);
+  }
+
+  // Extract JSON payload
+  let rawJson;
+  try {
+    const textOutput =
+      response?.text !== undefined
+        ? response.text
+        : typeof response === 'string'
+          ? response
+          : JSON.stringify(response);
+
+    rawJson = typeof textOutput === 'string' ? JSON.parse(textOutput) : textOutput;
+  } catch (parseErr) {
+    const err = new Error('Gemini returned an unparseable response.');
+    err.code = 'AI_MALFORMED_OUTPUT';
+    err.statusCode = 502;
+    throw err;
+  }
+
+  // Validate through Zod schema
+  const parseResult = resumeAiRecommendationsOutputSchema.safeParse(rawJson);
+  if (!parseResult.success) {
+    const err = new Error(
+      `Gemini recommendations output failed schema validation: ${parseResult.error.message}`
+    );
+    err.code = 'AI_SCHEMA_VALIDATION_FAILED';
+    err.statusCode = 502;
+    throw err;
+  }
+
+  // Deeply sanitize model output to redact any reflected PII
+  const sanitizedOutput = sanitizeModelOutputPii(parseResult.data);
+
+  // Evidence grounding verification against exact sanitized inputs and deterministic results
+  const groundedRecommendations = verifyRecommendationGrounding({
+    recommendations: sanitizedOutput.recommendations,
+    overall_strategy: sanitizedOutput.overall_strategy,
+    resumeText: sanitizedResumeText,
+    jobDescription: `${jobTitle}\n${sanitizedJobText}`,
+    deterministicResults,
+  });
+
+  return groundedRecommendations;
+};
+
+/**
+ * Public method to generate personalized recommendations with timeout and cancellation.
+ *
+ * @param {object} params
+ * @param {string} params.resumeText
+ * @param {string} [params.jobTitle]
+ * @param {string} params.jobDescription
+ * @param {object} [params.deterministicResults]
+ * @param {number} [params.timeoutMs]
+ * @param {object} [params.options]
+ * @param {object} [params.clientOverride]
+ * @returns {Promise<object>}
+ */
+export const generatePersonalizedRecommendations = async ({
+  resumeText,
+  jobTitle,
+  jobDescription,
+  deterministicResults,
+  timeoutMs = config.geminiTimeoutMs,
+  options = {},
+  clientOverride = null,
+}) => {
+  return executeWithTimeout(
+    (signal) =>
+      extractPersonalizedRecommendations({
+        resumeText,
+        jobTitle,
+        jobDescription,
+        deterministicResults,
+        signal,
+        options,
+        clientOverride,
+      }),
+    timeoutMs
+  );
+};
+
+/**
  * Service Boundary Placeholder: Contextual Recommendations
  */
 export const generateContextualRecommendations = async () => {
@@ -640,6 +847,8 @@ export default {
   generateResumeUnderstanding,
   extractResumeJobComparison,
   generateResumeJobComparison,
+  extractPersonalizedRecommendations,
+  generatePersonalizedRecommendations,
   generateContextualRecommendations,
   generateSemanticComparison,
 };
