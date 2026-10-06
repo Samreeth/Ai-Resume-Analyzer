@@ -19,8 +19,22 @@ export const AiErrorAlert = ({ error, onRetry, className = '' }) => {
   const code = error.code || (typeof error === 'object' ? error.code : null);
   const rawMessage = typeof error === 'string' ? error : error.message || 'An unexpected error occurred.';
 
+  let cleanMessage = rawMessage;
+  if (typeof rawMessage === 'string' && rawMessage.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(rawMessage);
+      if (parsed?.error?.message) {
+        cleanMessage = parsed.error.message;
+      } else if (parsed?.message) {
+        cleanMessage = parsed.message;
+      }
+    } catch (_) {
+      // Use rawMessage if unparseable
+    }
+  }
+
   let title = 'AI Operation Notice';
-  let message = rawMessage;
+  let message = cleanMessage;
   let isWarning = false;
   let canRetry = Boolean(onRetry);
 
@@ -33,11 +47,16 @@ export const AiErrorAlert = ({ error, onRetry, className = '' }) => {
     title = 'AI Rate Limit Exceeded';
     message = 'The AI provider rate limit has been temporarily reached. Please wait a moment before retrying.';
     isWarning = true;
-  } else if (code === 'AI_SERVICE_UNAVAILABLE' || status === 503) {
+  } else if (code === 'AI_SERVICE_UNAVAILABLE') {
     title = 'AI Service Unavailable';
     message = 'AI features are currently unavailable or disabled on this server. All deterministic scoring, skill matches, and core features remain fully operational.';
     isWarning = true;
     canRetry = false;
+  } else if (status === 503 || code === 'GEMINI_PROVIDER_ERROR') {
+    title = 'AI Service Temporarily Busy';
+    message = cleanMessage || 'The AI service is currently experiencing high demand. Please try again in a few moments.';
+    isWarning = true;
+    canRetry = Boolean(onRetry);
   } else if (code === 'GEMINI_TIMEOUT' || status === 504) {
     title = 'AI Operation Timed Out';
     message = 'The AI analysis took longer than expected and timed out. You may safely retry the request.';

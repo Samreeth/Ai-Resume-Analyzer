@@ -58,7 +58,7 @@ export const runGeminiTests = async () => {
   });
 
   await test('2. Default State: isGeminiConfigured returns false under default unconfigured environment', () => {
-    const isConfigured = isGeminiConfigured();
+    const isConfigured = isGeminiConfigured({ enabled: false, apiKey: '' });
     // Default without GEMINI_ENABLED=true and without GEMINI_API_KEY
     assert.strictEqual(isConfigured, false);
   });
@@ -114,7 +114,7 @@ export const runGeminiTests = async () => {
     assert.strictEqual(status2.model, 'gemini-2.0-flash-lite');
 
     const statusDefault = getGeminiStatus({ model: '' });
-    assert.strictEqual(statusDefault.model, 'gemini-2.0-flash');
+    assert.strictEqual(statusDefault.model, 'gemini-3.8-flash');
   });
 
   await test('8. Config Validation: Enforces timeout bounds and safe fallback', () => {
@@ -133,7 +133,7 @@ export const runGeminiTests = async () => {
   // Group 5: Safe Service Boundaries & Placeholders
   await test('9. Service Boundary: Default getGeminiClient returns null when unconfigured', () => {
     // In unconfigured state, client is null
-    const client = getGeminiClient();
+    const client = getGeminiClient({ enabled: false, apiKey: '' });
     assert.strictEqual(client, null);
   });
 

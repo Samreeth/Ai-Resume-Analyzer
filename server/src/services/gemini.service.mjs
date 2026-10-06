@@ -52,7 +52,7 @@ export const isGeminiConfigured = (override = {}) => {
     return true;
   }
   const enabled = override.enabled !== undefined ? Boolean(override.enabled) : config.geminiEnabled;
-  const apiKey = override.apiKey !== undefined ? override.apiKey : config.geminiApiKey;
+  const apiKey = 'apiKey' in override ? override.apiKey : config.geminiApiKey;
 
   return Boolean(
     enabled &&
@@ -70,7 +70,7 @@ export const isGeminiConfigured = (override = {}) => {
  */
 export const getGeminiStatus = (override = {}) => {
   const enabled = override.enabled !== undefined ? Boolean(override.enabled) : config.geminiEnabled;
-  const apiKey = override.apiKey !== undefined ? override.apiKey : config.geminiApiKey;
+  const apiKey = 'apiKey' in override ? override.apiKey : config.geminiApiKey;
   const model = override.model !== undefined ? override.model : config.geminiModel;
   const timeoutMs = override.timeoutMs !== undefined ? override.timeoutMs : config.geminiTimeoutMs;
 
@@ -80,7 +80,7 @@ export const getGeminiStatus = (override = {}) => {
     configured: Boolean(enabled && hasApiKey),
     enabled: Boolean(enabled),
     hasApiKey,
-    model: String(model || 'gemini-2.0-flash').trim(),
+    model: String(model || 'gemini-3.8-flash').trim(),
     timeoutMs: Math.max(1000, Number(timeoutMs) || 10000),
   };
 };
@@ -99,7 +99,7 @@ export const getGeminiClient = (override = {}) => {
     return testMockClient;
   }
 
-  const apiKey = override.apiKey !== undefined ? override.apiKey : config.geminiApiKey;
+  const apiKey = 'apiKey' in override ? override.apiKey : config.geminiApiKey;
   const enabled = override.enabled !== undefined ? Boolean(override.enabled) : config.geminiEnabled;
 
   if (!enabled || !apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
@@ -205,6 +205,41 @@ export const executeWithTimeout = async (
 };
 
 /**
+ * Execute a Gemini generateContent request with automatic retry for transient 503 high-demand spikes.
+ * Recommended by official Gemini API troubleshooting guide for 503 UNAVAILABLE.
+ *
+ * @param {object} client - GoogleGenAI client instance
+ * @param {object} params - Request parameters for models.generateContent
+ * @param {boolean} [isMock=false] - True if client is a test mock
+ * @returns {Promise<any>}
+ */
+const executeGenerateContentWithRetry = async (client, params, isMock = false) => {
+  const maxRetries = isMock ? 0 : 2;
+  let attempt = 0;
+  while (true) {
+    try {
+      return await client.models.generateContent(params);
+    } catch (err) {
+      const isTransient =
+        err.status === 503 ||
+        err.statusCode === 503 ||
+        String(err.message).includes('503') ||
+        String(err.message).includes('high demand') ||
+        String(err.message).includes('UNAVAILABLE');
+
+      const signalAborted = params?.config?.abortSignal?.aborted;
+      if (isTransient && !signalAborted && attempt < maxRetries) {
+        attempt++;
+        const backoffMs = attempt * 1500;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        continue;
+      }
+      throw err;
+    }
+  }
+};
+
+/**
  * Core extraction function for AI-powered resume understanding.
  *
  * @param {object} params
@@ -271,15 +306,19 @@ ${sanitizedInputText}
 
   let response;
   try {
-    response = await client.models.generateContent({
-      model: modelName,
-      contents: promptContents,
-      config: {
-        responseMimeType: 'application/json',
-        systemInstruction,
-        abortSignal: signal,
+    response = await executeGenerateContentWithRetry(
+      client,
+      {
+        model: modelName,
+        contents: promptContents,
+        config: {
+          responseMimeType: 'application/json',
+          systemInstruction,
+          abortSignal: signal,
+        },
       },
-    });
+      Boolean(clientOverride || testMockClient)
+    );
   } catch (providerErr) {
     if (providerErr.name === 'AbortError' || providerErr.name === 'RequestAbortedError') {
       const timeoutErr = new Error('Gemini request timed out or was aborted.');
@@ -500,15 +539,19 @@ ${sanitizedResumeText}
 
   let response;
   try {
-    response = await client.models.generateContent({
-      model: modelName,
-      contents: promptContents,
-      config: {
-        responseMimeType: 'application/json',
-        systemInstruction,
-        abortSignal: signal,
+    response = await executeGenerateContentWithRetry(
+      client,
+      {
+        model: modelName,
+        contents: promptContents,
+        config: {
+          responseMimeType: 'application/json',
+          systemInstruction,
+          abortSignal: signal,
+        },
       },
-    });
+      Boolean(clientOverride || testMockClient)
+    );
   } catch (providerErr) {
     if (providerErr.name === 'AbortError' || providerErr.name === 'RequestAbortedError') {
       const timeoutErr = new Error('Gemini request timed out or was aborted.');
@@ -701,15 +744,19 @@ ${sanitizedResumeText}
 
   let response;
   try {
-    response = await client.models.generateContent({
-      model: modelName,
-      contents: promptContents,
-      config: {
-        responseMimeType: 'application/json',
-        systemInstruction,
-        abortSignal: signal,
+    response = await executeGenerateContentWithRetry(
+      client,
+      {
+        model: modelName,
+        contents: promptContents,
+        config: {
+          responseMimeType: 'application/json',
+          systemInstruction,
+          abortSignal: signal,
+        },
       },
-    });
+      Boolean(clientOverride || testMockClient)
+    );
   } catch (providerErr) {
     if (providerErr.name === 'AbortError' || providerErr.name === 'RequestAbortedError') {
       const timeoutErr = new Error('Gemini request timed out or was aborted.');

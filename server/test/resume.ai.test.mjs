@@ -380,13 +380,19 @@ Graduated in 2020-2024 with 3.9 GPA.`;
 
     await test('12. Feature Gate: Returns 503 AI_SERVICE_UNAVAILABLE when Gemini is unconfigured/disabled', async () => {
       clearMockGeminiClient();
-      const res = await request(`/api/resumes/${resumeA.resume_id}/ai-profile`, {
-        method: 'POST',
-        token: tokenA,
-        body: { consent: true },
-      });
-      assert.strictEqual(res.status, 503);
-      assert.strictEqual(res.data.error.code, 'AI_SERVICE_UNAVAILABLE');
+      const prevEnabled = config.geminiEnabled;
+      config.geminiEnabled = false;
+      try {
+        const res = await request(`/api/resumes/${resumeA.resume_id}/ai-profile`, {
+          method: 'POST',
+          token: tokenA,
+          body: { consent: true },
+        });
+        assert.strictEqual(res.status, 503);
+        assert.strictEqual(res.data.error.code, 'AI_SERVICE_UNAVAILABLE');
+      } finally {
+        config.geminiEnabled = prevEnabled;
+      }
     });
 
     // =========================================================================
