@@ -7,6 +7,7 @@ import DeleteResumeDialog from '../../components/resumes/DeleteResumeDialog.jsx'
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
 import Icon from '../../components/common/Icon.jsx';
+import ResumeAiProfileCard from '../../components/ai/ResumeAiProfileCard.jsx';
 
 /**
  * Resume Detail Page
@@ -630,6 +631,12 @@ export const ResumeDetailPage = () => {
           )}
         </div>
       )}
+
+      {/* AI Resume Understanding Profile Card (Stage 2/5) */}
+      <ResumeAiProfileCard
+        resumeId={resumeId}
+        extractionStatus={currentStatus}
+      />
 
       {/* Extracted Text Section (Only when present in session from processing response) */}
       {sessionExtractedText && (

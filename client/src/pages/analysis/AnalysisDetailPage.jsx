@@ -10,6 +10,8 @@ import DeleteAnalysisDialog from '../../components/analysis/DeleteAnalysisDialog
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
 import Icon from '../../components/common/Icon.jsx';
+import JobComparisonCard from '../../components/ai/JobComparisonCard.jsx';
+import PersonalizedRecommendations from '../../components/ai/PersonalizedRecommendations.jsx';
 
 /**
  * Detailed Compatibility Analysis Report Page
@@ -303,6 +305,18 @@ export const AnalysisDetailPage = () => {
             isLoading={isLoadingRecommendations}
             error={recommendationsError}
             onRetry={fetchRecommendations}
+          />
+
+          {/* 5. AI Contextual Job-to-Resume Comparison (Stage 3/5) */}
+          <JobComparisonCard
+            resumeId={analysis.resume_id}
+            jobId={analysis.job_id}
+          />
+
+          {/* 6. Personalized AI Strategic Recommendations (Stage 4/5) */}
+          <PersonalizedRecommendations
+            resumeId={analysis.resume_id}
+            jobId={analysis.job_id}
           />
         </>
       )}
