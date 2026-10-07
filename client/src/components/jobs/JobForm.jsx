@@ -79,7 +79,7 @@ export const JobForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate data-testid="job-form">
+    <form onSubmit={handleSubmit} noValidate data-testid="job-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {error && (
         <div
           role="alert"
@@ -87,41 +87,54 @@ export const JobForm = ({
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
-            padding: '0.75rem',
+            padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-md)',
             fontSize: 'var(--text-sm)',
-            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            animation: 'fadeIn 0.2s ease-out',
           }}
           data-testid="job-form-server-error"
         >
-          {error}
+          <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>
+            error_outline
+          </span>
+          <span>{error}</span>
         </div>
       )}
 
       {/* Job Title Field */}
-      <Input
-        id="job-title"
-        name="title"
-        label="Job Title"
-        value={formData.title}
-        onChange={handleChange}
-        error={errors.title}
-        placeholder="e.g. Senior Full-Stack Engineer"
-        required
-        disabled={isSubmitting}
-        helperText="Min 3, max 255 characters"
-        data-testid="job-title-input"
-      />
+      <div>
+        <Input
+          id="job-title"
+          name="title"
+          label="Job Title"
+          value={formData.title}
+          onChange={handleChange}
+          error={errors.title}
+          placeholder="e.g. Senior Full-Stack Engineer"
+          required
+          disabled={isSubmitting}
+          helperText="Min 3, max 255 characters"
+          data-testid="job-title-input"
+        />
+      </div>
 
       {/* Job Description Field */}
-      <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-        <label htmlFor="job-description" className="form-label">
-          Job Description <span style={{ color: 'var(--danger)' }}>*</span>
-        </label>
+      <div className="form-group" style={{ marginBottom: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+          <label htmlFor="job-description" className="form-label" style={{ margin: 0, fontWeight: 500, fontSize: 'var(--text-sm)' }}>
+            Job Description <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            Plain text or markdown
+          </span>
+        </div>
         <textarea
           id="job-description"
           name="description"
-          rows={8}
+          rows={7}
           value={formData.description}
           onChange={handleChange}
           disabled={isSubmitting}
@@ -133,13 +146,19 @@ export const JobForm = ({
             resize: 'vertical',
             fontFamily: 'inherit',
             fontSize: 'var(--text-sm)',
-            lineHeight: 1.5,
+            lineHeight: 1.6,
+            minHeight: '140px',
+            backgroundColor: 'var(--bg-surface)',
+            border: `1px solid ${errors.description ? 'var(--danger)' : 'var(--border-default)'}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '0.75rem 1rem',
+            transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
           }}
           data-testid="job-description-input"
         />
 
         {errors.description && (
-          <span id="job-desc-error" className="form-error" role="alert">
+          <span id="job-desc-error" className="form-error" role="alert" style={{ marginTop: '0.25rem' }}>
             {errors.description}
           </span>
         )}
@@ -152,17 +171,28 @@ export const JobForm = ({
               justifyContent: 'space-between',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-muted)',
-              marginTop: '0.25rem',
+              marginTop: '0.375rem',
             }}
           >
             <span>Min 20, max 50,000 characters</span>
-            <span>{formData.description.trim().length} chars</span>
+            <span className="tabular-nums" style={{ fontWeight: 500 }}>
+              {formData.description.trim().length} chars
+            </span>
           </div>
         )}
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: '0.75rem',
+          paddingTop: '0.75rem',
+          borderTop: '1px solid var(--border-subtle)',
+        }}
+      >
         {onCancel && (
           <Button
             type="button"
@@ -170,6 +200,7 @@ export const JobForm = ({
             onClick={onCancel}
             disabled={isSubmitting}
             data-testid="job-form-cancel-btn"
+            style={{ borderRadius: 'var(--radius-full)' }}
           >
             Cancel
           </Button>
@@ -181,6 +212,7 @@ export const JobForm = ({
           loading={isSubmitting}
           disabled={isSubmitting}
           data-testid="job-form-submit-btn"
+          style={{ borderRadius: 'var(--radius-full)', padding: '0.5rem 1.25rem' }}
         >
           {submitLabel}
         </Button>

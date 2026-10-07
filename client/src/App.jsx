@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import AuthLayout from './layouts/AuthLayout.jsx';
 import ProtectedRoute from './layouts/ProtectedRoute.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
@@ -19,8 +20,9 @@ import AnalysisDetailPage from './pages/analysis/AnalysisDetailPage.jsx';
 export const App = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ToastProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
           <Routes>
             {/* Public Guest Routes */}
             <Route element={<AuthLayout />}>
@@ -61,8 +63,9 @@ export const App = () => {
           </Routes>
         </ToastProvider>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    </ThemeProvider>
+  </BrowserRouter>
+);
 };
 
 export default App;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import resumeApi from '../../api/resume.api.js';
 import { useToast } from '../../hooks/useToast.js';
 import ResumeCard from '../../components/resumes/ResumeCard.jsx';
@@ -7,11 +7,11 @@ import DeleteResumeDialog from '../../components/resumes/DeleteResumeDialog.jsx'
 import Spinner from '../../components/common/Spinner.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import Button from '../../components/common/Button.jsx';
-import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Resumes List Page
- * Displays user's uploaded resumes with pagination, upload widget, and deletion flow.
+ * Minimalist, clean card grid view matching Stitch design with status filters and quick search.
+ * Includes a permanently visible top upload dropzone.
  */
 export const ResumesPage = () => {
   const toast = useToast();
@@ -26,7 +26,10 @@ export const ResumesPage = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showUpload, setShowUpload] = useState(false);
+
+  // Client-side filter toolbar states matching Stitch
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'COMPLETED' | 'PROCESSING' | 'PENDING' | 'FAILED'
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Deletion modal state
   const [resumeToDelete, setResumeToDelete] = useState(null);
@@ -62,7 +65,6 @@ export const ResumesPage = () => {
   }, [fetchResumes, pagination.page]);
 
   const handleUploadSuccess = () => {
-    setShowUpload(false);
     fetchResumes(1);
   };
 
@@ -90,7 +92,6 @@ export const ResumesPage = () => {
 
       setResumeToDelete(null);
 
-      // Re-fetch page (if current page becomes empty and page > 1, go to previous)
       const nextPage =
         resumes.length === 1 && pagination.page > 1
           ? pagination.page - 1
@@ -106,50 +107,347 @@ export const ResumesPage = () => {
     }
   };
 
+  // Filtered resumes based on status filter & search query
+  const filteredResumes = useMemo(() => {
+    return resumes.filter((r) => {
+      const status = String(r.extraction_status || '').toUpperCase();
+      if (statusFilter !== 'ALL' && status !== statusFilter) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const name = (r.file_name || '').toLowerCase();
+        const cand = (r.extracted_data?.candidate?.name || '').toLowerCase();
+        return name.includes(q) || cand.includes(q);
+      }
+      return true;
+    });
+  }, [resumes, statusFilter, searchQuery]);
+
+  // Counts for pills
+  const statusCounts = useMemo(() => {
+    const counts = { ALL: resumes.length, COMPLETED: 0, PROCESSING: 0, PENDING: 0, FAILED: 0 };
+    resumes.forEach((r) => {
+      const s = String(r.extraction_status || '').toUpperCase();
+      if (counts[s] !== undefined) counts[s]++;
+    });
+    return counts;
+  }, [resumes]);
+
   return (
-    <div data-testid="resumes-page" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div
+      data-testid="resumes-page"
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}
+    >
+      {/* 1. Top Action & Header Bar */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Resume Management
+          <h1
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}
+          >
+            Resumes
           </h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Upload, inspect, and manage candidate resume documents
+          <p
+            style={{
+              fontSize: '0.8125rem',
+              color: 'var(--text-secondary)',
+              marginTop: '0.2rem',
+              margin: 0,
+            }}
+          >
+            Upload, inspect, and evaluate candidate resume documents.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant={showUpload ? 'secondary' : 'primary'}
-          onClick={() => setShowUpload((prev) => !prev)}
-          data-testid="toggle-upload-btn"
-        >
-          {showUpload ? (
-            <>
-              <Icon name="close" size={16} />
-              <span>Close Upload</span>
-            </>
-          ) : (
-            <>
-              <Icon name="upload" size={16} />
-              <span>Upload Resume</span>
-            </>
-          )}
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* View Toggle (Grid / List visual indicator) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0.2rem',
+              backgroundColor: 'var(--bg-container-low)',
+              borderRadius: 'var(--radius-md)',
+              gap: '0.125rem',
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Grid View"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.35rem',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--accent-primary)',
+                border: 'none',
+                boxShadow: 'var(--shadow-xs)',
+                cursor: 'pointer',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>
+                grid_view
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="Table View"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.35rem',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'transparent',
+                color: 'var(--text-secondary)',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>
+                table_rows
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Browse button that triggers file selector */}
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => document.getElementById('resume-file-input')?.click()}
+            id="quick-upload-trigger-btn"
+            style={{ borderRadius: 'var(--radius-full)' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>
+              add
+            </span>
+            <span>Upload Resume</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Upload Widget (Togglable or if empty) */}
-      {showUpload && (
-        <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-          <ResumeUpload
-            onUploadSuccess={handleUploadSuccess}
-            onError={() => {}}
-          />
+      {/* 2. Fixed, Permanently Visible Upload Dropzone Card */}
+      <ResumeUpload
+        onUploadSuccess={handleUploadSuccess}
+        onError={() => {}}
+      />
+
+      {/* 3. Search & Filter Controls Toolbar */}
+      {!isLoading && !error && resumes.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+          }}
+        >
+          {/* Search Input */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
+            <span
+              className="material-symbols-outlined"
+              style={{
+                position: 'absolute',
+                left: '0.625rem',
+                top: '0.5rem',
+                fontSize: '1rem',
+                color: 'var(--text-muted)',
+              }}
+            >
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search resumes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                height: '2.125rem',
+                paddingLeft: '2.125rem',
+                paddingRight: '0.75rem',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                boxShadow: 'var(--shadow-xs)',
+              }}
+            />
+          </div>
+
+          {/* Filter Pills */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              overflowX: 'auto',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'ALL' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                color: statusFilter === 'ALL' ? '#ffffff' : 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              All ({statusCounts.ALL})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter('COMPLETED')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                padding: '0.3rem 0.75rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'COMPLETED' ? 'var(--success-bg)' : 'var(--bg-card)',
+                color: statusFilter === 'COMPLETED' ? 'var(--success-text)' : 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <span
+                style={{
+                  width: '0.45rem',
+                  height: '0.45rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--success)',
+                }}
+              />
+              <span>Completed ({statusCounts.COMPLETED})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PROCESSING')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                padding: '0.3rem 0.75rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'PROCESSING' ? 'var(--accent-muted)' : 'var(--bg-card)',
+                color: statusFilter === 'PROCESSING' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <span
+                style={{
+                  width: '0.45rem',
+                  height: '0.45rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--accent-primary)',
+                }}
+              />
+              <span>Processing ({statusCounts.PROCESSING})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PENDING')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                padding: '0.3rem 0.75rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'PENDING' ? 'var(--warning-bg)' : 'var(--bg-card)',
+                color: statusFilter === 'PENDING' ? 'var(--warning-text)' : 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <span
+                style={{
+                  width: '0.45rem',
+                  height: '0.45rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--warning)',
+                }}
+              />
+              <span>Pending ({statusCounts.PENDING})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter('FAILED')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                padding: '0.3rem 0.75rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'FAILED' ? 'var(--danger-bg)' : 'var(--bg-card)',
+                color: statusFilter === 'FAILED' ? 'var(--danger-text)' : 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <span
+                style={{
+                  width: '0.45rem',
+                  height: '0.45rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--danger)',
+                }}
+              />
+              <span>Failed ({statusCounts.FAILED})</span>
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* 4. Loading State */}
       {isLoading && (
         <div
           data-testid="resumes-loading"
@@ -169,24 +467,45 @@ export const ResumesPage = () => {
         </div>
       )}
 
-      {/* Error State */}
+      {/* 5. Error State */}
       {!isLoading && error && (
         <div
           role="alert"
           style={{
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
-            color: 'var(--danger)',
-            padding: '1.5rem',
-            borderRadius: 'var(--radius-lg)',
+            color: 'var(--danger-text)',
+            padding: '1.75rem',
+            borderRadius: 'var(--radius-xl)',
             textAlign: 'center',
+            maxWidth: '520px',
+            margin: '0 auto',
           }}
           data-testid="resumes-error"
         >
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: '2rem', color: 'var(--danger)', marginBottom: '0.5rem' }}
+          >
+            error
+          </span>
+          <h3
+            style={{
+              fontSize: 'var(--text-lg)',
+              fontWeight: 600,
+              marginBottom: '0.5rem',
+              color: 'var(--text-primary)',
+            }}
+          >
             Unable to load resumes
           </h3>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem', color: 'var(--text-secondary)' }}>
+          <p
+            style={{
+              fontSize: 'var(--text-sm)',
+              marginBottom: '1.25rem',
+              color: 'var(--text-secondary)',
+            }}
+          >
             {error}
           </p>
           <Button
@@ -199,44 +518,69 @@ export const ResumesPage = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* 6. Empty State */}
       {!isLoading && !error && resumes.length === 0 && (
         <EmptyState
-          icon={<Icon name="resume" size={32} />}
+          icon={
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: '2.5rem', color: 'var(--text-muted)' }}
+            >
+              description
+            </span>
+          }
           title="No resumes uploaded yet"
           description="Upload your first resume in PDF or DOCX format to parse and evaluate candidates against job requirements."
           action={
-            !showUpload && (
-              <Button
-                variant="primary"
-                onClick={() => setShowUpload(true)}
-                data-testid="empty-upload-btn"
-              >
-                Upload First Resume
-              </Button>
-            )
+            <Button
+              variant="primary"
+              onClick={() => document.getElementById('resume-file-input')?.click()}
+              data-testid="empty-upload-btn"
+            >
+              Upload First Resume
+            </Button>
           }
         />
       )}
 
-      {/* Resumes Grid */}
+      {/* 7. Resumes Card Grid (2 Columns) */}
       {!isLoading && !error && resumes.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div
-            className="grid grid-cols-2 gap-4"
-            data-testid="resumes-grid"
-            style={{ minHeight: '100px' }}
-          >
-            {resumes.map((resume) => (
-              <ResumeCard
-                key={resume.resume_id}
-                resume={resume}
-                onDeleteClick={openDeleteDialog}
-              />
-            ))}
-          </div>
+          {filteredResumes.length === 0 ? (
+            <div
+              style={{
+                padding: '3rem 1rem',
+                textAlign: 'center',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              No candidate resumes match the active search or status filter.
+            </div>
+          ) : (
+            <div
+              className="grid grid-cols-2 gap-4"
+              data-testid="resumes-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '1.25rem',
+                minHeight: '100px',
+              }}
+            >
+              {filteredResumes.map((resume) => (
+                <ResumeCard
+                  key={resume.resume_id}
+                  resume={resume}
+                  onDeleteClick={openDeleteDialog}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Pagination Controls */}
+          {/* 8. Pagination Controls */}
           {pagination.totalPages > 1 && (
             <div
               style={{
@@ -245,10 +589,14 @@ export const ResumesPage = () => {
                 alignItems: 'center',
                 paddingTop: '1rem',
                 borderTop: '1px solid var(--border-subtle)',
+                marginTop: 'auto',
               }}
               data-testid="resumes-pagination"
             >
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
+              <div
+                style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}
+                className="tabular-nums"
+              >
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} resumes
@@ -264,7 +612,14 @@ export const ResumesPage = () => {
                 >
                   &larr; Previous
                 </Button>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 0.5rem' }} className="tabular-nums">
+                <span
+                  style={{
+                    fontSize: '0.8125rem',
+                    color: 'var(--text-secondary)',
+                    padding: '0 0.5rem',
+                  }}
+                  className="tabular-nums"
+                >
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button
@@ -282,7 +637,7 @@ export const ResumesPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* 9. Delete Confirmation Modal */}
       <DeleteResumeDialog
         isOpen={Boolean(resumeToDelete)}
         resumeName={resumeToDelete?.file_name || ''}

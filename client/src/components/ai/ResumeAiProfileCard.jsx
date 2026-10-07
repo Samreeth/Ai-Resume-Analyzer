@@ -193,10 +193,19 @@ export const ResumeAiProfileCard = ({ resumeId, extractionStatus }) => {
   const cacheBadgeText = aiProfile?.version ? `Cached • v${aiProfile.version}` : 'Cached';
 
   return (
-    <div className="card" data-testid="resume-ai-profile-card">
+    <div
+      className="card"
+      data-testid="resume-ai-profile-card"
+      style={{
+        borderRadius: 'var(--radius-xl)',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-subtle)',
+        padding: '1.5rem',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
       {/* Header and Actions */}
       <div
-        className="card-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -210,7 +219,7 @@ export const ResumeAiProfileCard = ({ resumeId, extractionStatus }) => {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
-            <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--text-base)', fontWeight: 600 }}>
               <Icon name="sparkles" size={18} style={{ color: 'var(--accent-primary)' }} />
               <span>AI Resume Understanding</span>
             </h3>

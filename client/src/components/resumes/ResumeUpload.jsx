@@ -1,8 +1,6 @@
 import React, { useState, useRef } from 'react';
 import resumeApi from '../../api/resume.api.js';
 import { useToast } from '../../hooks/useToast.js';
-import Button from '../common/Button.jsx';
-import Icon from '../common/Icon.jsx';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx'];
@@ -12,17 +10,20 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 /**
- * Reusable Resume Upload component
- * Enforces file constraints, performs validation, and uploads via resumeApi.uploadResume.
+ * Reusable Resume Upload dropzone component
+ * Styled exactly to match the user's reference mockup with centered cloud-pill icon,
+ * clean typography, "Cancel" text action, and purple pill "Select Files" button.
  *
  * @param {object} props
  * @param {function} props.onUploadSuccess - Callback with created resume record
  * @param {function} [props.onError] - Optional error callback
+ * @param {function} [props.onCancel] - Optional cancel callback
  * @param {string} [props.className='']
  */
 export const ResumeUpload = ({
   onUploadSuccess,
   onError,
+  onCancel,
   className = '',
 }) => {
   const toast = useToast();
@@ -146,25 +147,50 @@ export const ResumeUpload = ({
     }
   };
 
-  const clearSelectedFile = () => {
+  const clearSelectedFile = (e) => {
+    e?.stopPropagation();
     setSelectedFile(null);
     setValidationError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  const handleCardClick = () => {
+    if (!isUploading && !selectedFile) {
+      fileInputRef.current?.click();
+    }
   };
 
   return (
-    <div className={`card ${className}`.trim()} data-testid="resume-upload-card">
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-          Upload Candidate Resume
-        </h3>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-          Supports PDF or DOCX format up to 5 MB. Files are stored securely outside the web root.
-        </p>
-      </div>
-
+    <div
+      className={`card ${className}`.trim()}
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '1rem',
+        padding: '2.25rem 1.5rem',
+        border: isDragActive
+          ? '3px dotted var(--accent-primary)'
+          : '1.5px dotted var(--border-default)',
+        boxShadow: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        position: 'relative',
+        cursor: selectedFile ? 'default' : 'pointer',
+        transition: 'all var(--transition-fast)',
+      }}
+      onClick={handleCardClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      data-testid="resume-upload-card"
+    >
       {/* Hidden native input */}
       <input
         ref={fileInputRef}
@@ -178,106 +204,198 @@ export const ResumeUpload = ({
         aria-label="Select resume document"
       />
 
-      {/* Dropzone */}
+      {/* Dropzone container target for accessibility & tests */}
       <div
-        className={`upload-dropzone ${isDragActive ? 'drag-active' : ''}`}
-        onClick={() => !isUploading && fileInputRef.current?.click()}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && !isUploading) {
-            e.preventDefault();
-            fileInputRef.current?.click();
-          }
-        }}
-        aria-label="Upload dropzone. Click or drop a PDF or DOCX file here."
         data-testid="upload-dropzone"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+        }}
       >
+        {/* Centered Cloud Icon in Pill */}
         <div
           style={{
-            display: 'inline-flex',
+            width: '2.875rem',
+            height: '2.875rem',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '3.5rem',
-            height: '3.5rem',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: 'var(--accent-muted)',
-            color: 'var(--accent-primary)',
             marginBottom: '0.875rem',
+            transition: 'transform var(--transition-fast)',
           }}
           aria-hidden="true"
         >
-          <Icon name="upload" size={26} />
+          {/* Custom Cloud Upload SVG matching the reference design */}
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--accent-primary)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+            <path d="M12 12v9" />
+            <path d="m8 16 4-4 4 4" />
+          </svg>
         </div>
 
+        {/* Selected File Details or Default Title */}
         {selectedFile ? (
-          <div>
-            <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div style={{ marginBottom: '0.35rem' }}>
+            <div
+              style={{
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                wordBreak: 'break-all',
+                maxWidth: '460px',
+              }}
+            >
               {selectedFile.name}
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }} className="tabular-nums">
+            <div
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--text-secondary)',
+                marginTop: '0.2rem',
+              }}
+              className="tabular-nums"
+            >
               {(selectedFile.size / 1024).toFixed(1)} KB &bull; Ready to upload
             </div>
           </div>
         ) : (
-          <div>
-            <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Choose a file or drag & drop here
+          <>
+            {/* Primary Headline */}
+            <div
+              style={{
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.01em',
+                marginBottom: '0.35rem',
+              }}
+            >
+              Drag and drop resume here, or click to browse
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              PDF or DOCX (Max 5 MB)
+
+            {/* Subtitle */}
+            <div
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--text-secondary)',
+                marginBottom: '1rem',
+              }}
+            >
+              PDF or DOCX up to 15MB
             </div>
+          </>
+        )}
+
+        {/* Validation Error Alert */}
+        {validationError && (
+          <div
+            role="alert"
+            style={{
+              backgroundColor: 'var(--danger-bg)',
+              border: '1px solid var(--danger-border)',
+              color: 'var(--danger-text)',
+              padding: '0.5rem 0.875rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.8125rem',
+              marginBottom: '1rem',
+              maxWidth: '460px',
+              textAlign: 'center',
+            }}
+            data-testid="upload-error-alert"
+          >
+            {validationError}
           </div>
         )}
-      </div>
 
-      {/* Validation / Server Error Alert */}
-      {validationError && (
+        {/* Actions Row matching the reference layout */}
         <div
-          role="alert"
           style={{
-            backgroundColor: 'var(--danger-bg)',
-            border: '1px solid var(--danger-border)',
-            color: 'var(--danger)',
-            padding: '0.75rem 1rem',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 'var(--text-sm)',
-            marginTop: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.25rem',
+            marginTop: selectedFile ? '0.75rem' : '0.125rem',
           }}
-          data-testid="upload-error-alert"
         >
-          {validationError}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-        {selectedFile && (
-          <Button
+          {/* Cancel Action */}
+          <button
             type="button"
-            variant="secondary"
-            size="sm"
             onClick={clearSelectedFile}
-            disabled={isUploading}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              padding: '0.4rem 0.5rem',
+              transition: 'color var(--transition-fast)',
+            }}
             data-testid="upload-clear-btn"
           >
-            Clear
-          </Button>
-        )}
+            Cancel
+          </button>
 
-        <Button
-          type="button"
-          variant="primary"
-          onClick={handleUpload}
-          loading={isUploading}
-          disabled={!selectedFile || isUploading}
-          data-testid="upload-submit-btn"
-        >
-          {isUploading ? 'Uploading...' : 'Upload Resume'}
-        </Button>
+          {/* Primary Action Button ("Select Files" or "Process Resume") */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (selectedFile) {
+                handleUpload(e);
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}
+            disabled={isUploading}
+            style={{
+              backgroundColor: 'var(--accent-primary)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-full)',
+              padding: '0.5rem 1.35rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: isUploading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 1px 3px rgba(79, 70, 229, 0.25)',
+              transition: 'all var(--transition-fast)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+            data-testid="upload-submit-btn"
+          >
+            {isUploading ? (
+              <>
+                <span
+                  className="material-symbols-outlined animate-spin"
+                  style={{ fontSize: '1rem' }}
+                >
+                  progress_activity
+                </span>
+                <span>Uploading...</span>
+              </>
+            ) : selectedFile ? (
+              <span>Process Resume</span>
+            ) : (
+              <span>Select Files</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

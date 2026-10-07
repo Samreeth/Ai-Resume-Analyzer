@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jobApi from '../../api/job.api.js';
 import { useToast } from '../../hooks/useToast.js';
@@ -12,7 +12,8 @@ import Icon from '../../components/common/Icon.jsx';
 
 /**
  * Jobs List Page
- * Displays user's job descriptions with pagination, creation form, and deletion flow.
+ * Displays user's job descriptions with pagination, creation form, search/filters, and deletion flow.
+ * Clean, minimalist SaaS interface inspired by Stitch & Linear design.
  */
 export const JobsPage = () => {
   const navigate = useNavigate();
@@ -31,6 +32,10 @@ export const JobsPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('ALL'); // 'ALL' | 'EXTRACTED' | 'PENDING'
 
   // Deletion modal state
   const [jobToDelete, setJobToDelete] = useState(null);
@@ -130,9 +135,64 @@ export const JobsPage = () => {
     }
   };
 
+  // Filter & Search logic
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      // Filter type check
+      const hasSkills =
+        (job.skill_counts?.total ?? 0) > 0 ||
+        (Array.isArray(job.extracted_data?.required) && job.extracted_data.required.length > 0) ||
+        (Array.isArray(job.extracted_data?.preferred) && job.extracted_data.preferred.length > 0);
+
+      if (filterType === 'EXTRACTED' && !hasSkills) return false;
+      if (filterType === 'PENDING' && hasSkills) return false;
+
+      // Search query check
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = (job.title || '').toLowerCase().includes(q);
+        const descMatch = (job.description || '').toLowerCase().includes(q);
+        return titleMatch || descMatch;
+      }
+
+      return true;
+    });
+  }, [jobs, filterType, searchQuery]);
+
+  // Counts for filter pills
+  const counts = useMemo(() => {
+    let extractedCount = 0;
+    let pendingCount = 0;
+
+    jobs.forEach((j) => {
+      const hasSkills =
+        (j.skill_counts?.total ?? 0) > 0 ||
+        (Array.isArray(j.extracted_data?.required) && j.extracted_data.required.length > 0) ||
+        (Array.isArray(j.extracted_data?.preferred) && j.extracted_data.preferred.length > 0);
+
+      if (hasSkills) extractedCount++;
+      else pendingCount++;
+    });
+
+    return {
+      all: jobs.length,
+      extracted: extractedCount,
+      pending: pendingCount,
+    };
+  }, [jobs]);
+
   return (
-    <div data-testid="jobs-page" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Page Header */}
+    <div
+      data-testid="jobs-page"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        maxWidth: '1280px',
+        margin: '0 auto',
+      }}
+    >
+      {/* 1. Page Header & Action Bar */}
       <div
         style={{
           display: 'flex',
@@ -143,53 +203,136 @@ export const JobsPage = () => {
         }}
       >
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          <h1
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}
+          >
             Job Descriptions
           </h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+          <p
+            style={{
+              fontSize: '0.8125rem',
+              color: 'var(--text-secondary)',
+              marginTop: '0.2rem',
+              margin: 0,
+            }}
+          >
             Manage target roles, job requirements, and extracted skill criteria
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant={showCreate ? 'secondary' : 'primary'}
-          onClick={() => {
-            setShowCreate((prev) => !prev);
-            setCreateError('');
-          }}
-          data-testid="toggle-create-job-btn"
-        >
-          {showCreate ? (
-            <>
-              <Icon name="close" size={16} />
-              <span>Cancel</span>
-            </>
-          ) : (
-            <>
-              <Icon name="jobs" size={16} />
-              <span>Create Job Description</span>
-            </>
-          )}
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Create / Cancel Toggle Button */}
+          <Button
+            type="button"
+            variant={showCreate ? 'secondary' : 'primary'}
+            onClick={() => {
+              setShowCreate((prev) => !prev);
+              setCreateError('');
+            }}
+            data-testid="toggle-create-job-btn"
+            style={{ borderRadius: 'var(--radius-full)' }}
+          >
+            {showCreate ? (
+              <>
+                <Icon name="close" size={16} />
+                <span>Cancel</span>
+              </>
+            ) : (
+              <>
+                <Icon name="jobs" size={16} />
+                <span>Create Job Description</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Create Job Form Card */}
+      {/* 2. Create Job Form Card (Collapsible) */}
       {showCreate && (
-        <div className="card" style={{ animation: 'fadeIn 0.2s ease-out' }} data-testid="create-job-card">
+        <div
+          className="card"
+          style={{
+            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-xl, 1rem)',
+            boxShadow: 'var(--shadow-md)',
+            padding: '1.5rem',
+          }}
+          data-testid="create-job-card"
+        >
           <div
             style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
               borderBottom: '1px solid var(--border-subtle)',
-              paddingBottom: '0.75rem',
+              paddingBottom: '1rem',
               marginBottom: '1.25rem',
             }}
           >
-            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-              New Job Description
-            </h2>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Add a role overview. Required and preferred skills will be automatically extracted upon creation.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div
+                style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--bg-container-low, rgba(99, 102, 241, 0.1))',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--accent-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-hidden="true"
+              >
+                <Icon name="sparkles" size={18} />
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    letterSpacing: '-0.01em',
+                    margin: 0,
+                  }}
+                >
+                  New Job Description
+                </h2>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.125rem', margin: 0 }}>
+                  Add a role overview. Required and preferred skills will be automatically extracted upon creation.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreate(false);
+                setCreateError('');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '0.25rem',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-label="Close creation form"
+            >
+              <Icon name="close" size={18} />
+            </button>
           </div>
 
           <JobForm
@@ -205,7 +348,7 @@ export const JobsPage = () => {
         </div>
       )}
 
-      {/* Loading State */}
+      {/* 3. Loading State */}
       {isLoading && (
         <div
           data-testid="jobs-loading"
@@ -214,18 +357,18 @@ export const JobsPage = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '40vh',
+            minHeight: '35vh',
             gap: '1rem',
           }}
         >
           <Spinner size="lg" ariaLabel="Loading job descriptions..." />
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
             Loading job descriptions...
           </p>
         </div>
       )}
 
-      {/* Error State */}
+      {/* 4. Error State */}
       {!isLoading && error && (
         <div
           role="alert"
@@ -255,7 +398,7 @@ export const JobsPage = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* 5. Empty State (Zero Jobs total) */}
       {!isLoading && !error && jobs.length === 0 && (
         <EmptyState
           icon={<Icon name="jobs" size={32} />}
@@ -267,6 +410,7 @@ export const JobsPage = () => {
                 variant="primary"
                 onClick={() => setShowCreate(true)}
                 data-testid="empty-create-job-btn"
+                style={{ borderRadius: 'var(--radius-full)' }}
               >
                 Create First Job Description
               </Button>
@@ -275,15 +419,169 @@ export const JobsPage = () => {
         />
       )}
 
-      {/* Jobs Grid */}
+      {/* 6. Jobs List & Controls (When jobs exist) */}
       {!isLoading && !error && jobs.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Search & Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            {/* Search Input */}
+            <div style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  position: 'absolute',
+                  left: '0.625rem',
+                  top: '0.5rem',
+                  fontSize: '1rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search job titles or keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '2.125rem',
+                  paddingLeft: '2.125rem',
+                  paddingRight: '0.75rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8125rem',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  boxShadow: 'var(--shadow-xs)',
+                  transition: 'border-color var(--transition-fast)',
+                }}
+              />
+            </div>
+
+            {/* Filter Pills & View Indicator */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('ALL')}
+                  style={{
+                    padding: '0.3rem 0.75rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: filterType === 'ALL' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                    color: filterType === 'ALL' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: 'var(--shadow-xs)',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  All ({counts.all})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterType('EXTRACTED')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.3rem 0.75rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: filterType === 'EXTRACTED' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                    color: filterType === 'EXTRACTED' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: 'var(--shadow-xs)',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  Extracted ({counts.extracted})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterType('PENDING')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.3rem 0.75rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: filterType === 'PENDING' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                    color: filterType === 'PENDING' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: 'var(--shadow-xs)',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  Pending ({counts.pending})
+                </button>
+              </div>
+
+              {/* View toggle indicator */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0.2rem',
+                  backgroundColor: 'var(--bg-container-low)',
+                  borderRadius: 'var(--radius-md)',
+                  gap: '0.125rem',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.35rem',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--accent-primary)',
+                    boxShadow: 'var(--shadow-xs)',
+                  }}
+                  title="Grid View active"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>
+                    grid_view
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Jobs Grid */}
           <div
             className="grid grid-cols-2 gap-4"
             data-testid="jobs-grid"
             style={{ minHeight: '100px' }}
           >
-            {jobs.map((job) => (
+            {filteredJobs.map((job) => (
               <JobCard
                 key={job.job_id}
                 job={job}
@@ -291,6 +589,51 @@ export const JobsPage = () => {
               />
             ))}
           </div>
+
+          {/* Filtered empty state */}
+          {filteredJobs.length === 0 && (
+            <div
+              style={{
+                padding: '3rem 1.5rem',
+                textAlign: 'center',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div
+                style={{
+                  width: '3rem',
+                  height: '3rem',
+                  margin: '0 auto 1rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--bg-container-low)',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="search" size={20} />
+              </div>
+              <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+                No job descriptions found
+              </h3>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
+                No roles match your current query "{searchQuery || filterType}".
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterType('ALL');
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
 
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (
@@ -317,6 +660,7 @@ export const JobsPage = () => {
                   onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                   disabled={pagination.page <= 1}
                   data-testid="pagination-prev-btn"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 >
                   &larr; Previous
                 </Button>
@@ -329,6 +673,7 @@ export const JobsPage = () => {
                   onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page >= pagination.totalPages}
                   data-testid="pagination-next-btn"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 >
                   Next &rarr;
                 </Button>
@@ -338,7 +683,7 @@ export const JobsPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* 7. Delete Confirmation Modal */}
       <DeleteJobDialog
         isOpen={Boolean(jobToDelete)}
         jobTitle={jobToDelete?.title || ''}

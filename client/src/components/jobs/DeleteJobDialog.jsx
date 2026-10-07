@@ -40,6 +40,19 @@ export const DeleteJobDialog = ({
       onClick={!isDeleting ? onCancel : undefined}
       role="presentation"
       data-testid="delete-job-dialog-backdrop"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.6))',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '1rem',
+        animation: 'fadeIn 0.15s ease-out',
+      }}
     >
       <div
         className="modal-dialog"
@@ -49,35 +62,56 @@ export const DeleteJobDialog = ({
         aria-describedby="delete-job-dialog-desc"
         onClick={(e) => e.stopPropagation()}
         data-testid="delete-job-dialog"
+        style={{
+          width: '100%',
+          maxWidth: '28rem',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-xl, 1rem)',
+          boxShadow: 'var(--shadow-lg)',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem',
+          animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
       >
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
               style={{
-                width: '2rem',
-                height: '2rem',
+                width: '2.5rem',
+                height: '2.5rem',
                 borderRadius: 'var(--radius-full)',
                 backgroundColor: 'var(--danger-bg)',
                 color: 'var(--danger)',
+                border: '1px solid var(--danger-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
               aria-hidden="true"
             >
-              <Icon name="trash" size={16} />
+              <Icon name="trash" size={18} />
             </div>
-            <h3
-              id="delete-job-dialog-title"
-              style={{
-                fontSize: 'var(--text-lg)',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}
-            >
-              Delete Job Description
-            </h3>
+            <div>
+              <h3
+                id="delete-job-dialog-title"
+                style={{
+                  fontSize: 'var(--text-lg)',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  letterSpacing: '-0.01em',
+                  margin: 0,
+                }}
+              >
+                Delete Job Description
+              </h3>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                Irreversible deletion action
+              </span>
+            </div>
           </div>
 
           <p
@@ -85,8 +119,8 @@ export const DeleteJobDialog = ({
             style={{
               fontSize: 'var(--text-sm)',
               color: 'var(--text-secondary)',
-              marginTop: '0.5rem',
-              lineHeight: 1.5,
+              lineHeight: 1.55,
+              margin: 0,
             }}
           >
             Are you sure you want to delete{' '}
@@ -105,7 +139,6 @@ export const DeleteJobDialog = ({
               padding: '0.75rem 1rem',
               borderRadius: 'var(--radius-md)',
               fontSize: 'var(--text-sm)',
-              marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
@@ -117,13 +150,14 @@ export const DeleteJobDialog = ({
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem' }}>
           <Button
             type="button"
             variant="secondary"
             onClick={onCancel}
             disabled={isDeleting}
             data-testid="delete-job-cancel-btn"
+            style={{ borderRadius: 'var(--radius-md)' }}
           >
             Cancel
           </Button>
@@ -134,6 +168,7 @@ export const DeleteJobDialog = ({
             loading={isDeleting}
             disabled={isDeleting}
             data-testid="delete-job-confirm-btn"
+            style={{ borderRadius: 'var(--radius-md)' }}
           >
             Delete Job
           </Button>

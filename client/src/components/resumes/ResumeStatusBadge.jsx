@@ -1,9 +1,8 @@
 import React from 'react';
-import Icon from '../common/Icon.jsx';
 
 /**
  * Reusable Resume Status Badge
- * Maps backend extraction lifecycle statuses to visual badges with native SVG icons.
+ * Minimalist status badge matching Stitch design with soft colored pill and dot indicator.
  *
  * @param {object} props
  * @param {'PENDING'|'PROCESSING'|'COMPLETED'|'FAILED'} props.status
@@ -12,51 +11,74 @@ import Icon from '../common/Icon.jsx';
 export const ResumeStatusBadge = ({ status, className = '' }) => {
   const normalized = String(status || '').toUpperCase();
 
-  let badgeClass = 'badge';
   let label = status || 'Unknown';
-  let icon = null;
+  let dotColor = 'var(--text-muted)';
+  let bg = 'var(--bg-container)';
+  let color = 'var(--text-secondary)';
+  let isPinging = false;
 
   switch (normalized) {
     case 'COMPLETED':
-      badgeClass = 'badge badge-completed';
       label = 'Completed';
-      icon = <Icon name="check" size={12} />;
+      dotColor = 'var(--success)';
+      bg = 'var(--success-bg)';
+      color = 'var(--success-text)';
       break;
     case 'PROCESSING':
-      badgeClass = 'badge badge-processing';
       label = 'Processing';
-      icon = (
-        <span
-          className="spinner"
-          style={{ width: '0.625rem', height: '0.625rem', borderWidth: '1.5px' }}
-          aria-hidden="true"
-        />
-      );
+      dotColor = 'var(--accent-primary)';
+      bg = 'var(--accent-muted)';
+      color = 'var(--accent-primary)';
+      isPinging = true;
       break;
     case 'PENDING':
-      badgeClass = 'badge badge-pending';
       label = 'Pending';
-      icon = <Icon name="refresh" size={12} />;
+      dotColor = 'var(--warning)';
+      bg = 'var(--warning-bg)';
+      color = 'var(--warning-text)';
       break;
     case 'FAILED':
-      badgeClass = 'badge badge-failed';
       label = 'Failed';
-      icon = <Icon name="close" size={12} />;
+      dotColor = 'var(--danger)';
+      bg = 'var(--danger-bg)';
+      color = 'var(--danger-text)';
       break;
     default:
-      badgeClass = 'badge badge-neutral';
       label = status || 'Unknown';
       break;
   }
 
   return (
     <span
-      className={`${badgeClass} ${className}`.trim()}
+      className={`badge ${className}`.trim()}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.35rem',
+        padding: '0.2rem 0.625rem',
+        borderRadius: 'var(--radius-full)',
+        fontSize: '0.6875rem',
+        fontWeight: 600,
+        backgroundColor: bg,
+        color: color,
+        border: '1px solid transparent',
+        transition: 'all var(--transition-fast)',
+      }}
       role="status"
       aria-label={`Extraction status: ${label}`}
       data-testid="resume-status-badge"
     >
-      {icon && <span style={{ display: 'inline-flex', alignItems: 'center' }}>{icon}</span>}
+      <span
+        style={{
+          width: '0.45rem',
+          height: '0.45rem',
+          borderRadius: 'var(--radius-full)',
+          backgroundColor: dotColor,
+          display: 'inline-block',
+          flexShrink: 0,
+        }}
+        className={isPinging ? 'animate-pulse' : ''}
+      />
       <span>{label}</span>
     </span>
   );
