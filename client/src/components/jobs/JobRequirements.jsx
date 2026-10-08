@@ -25,7 +25,20 @@ export const JobRequirements = ({
   const metadata = extractedData?.metadata;
 
   return (
-    <div className="card" data-testid="job-requirements">
+    <div
+      className="card"
+      data-testid="job-requirements"
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-xl, 1rem)',
+        padding: '1.5rem',
+        boxShadow: 'var(--shadow-sm)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+      }}
+    >
       <div
         className="card-header"
         style={{
@@ -36,25 +49,54 @@ export const JobRequirements = ({
           gap: '1rem',
           borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: '1rem',
-          marginBottom: '1.25rem',
+          margin: 0,
         }}
       >
-        <div>
-          <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Icon name="briefcase" size={18} style={{ color: 'var(--accent-primary)' }} />
-            <span>Structured Requirements</span>
-          </h3>
-          <p
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div
             style={{
-              fontSize: 'var(--text-xs)',
-              color: 'var(--text-muted)',
-              marginTop: '0.25rem',
+              width: '2.5rem',
+              height: '2.5rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--bg-container-low, rgba(99, 102, 241, 0.08))',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
+            aria-hidden="true"
           >
-            {hasExtracted && metadata?.extractedAt
-              ? `Extracted on ${new Date(metadata.extractedAt).toLocaleString()}`
-              : 'Extracted competencies, required skills, and preferred qualifications.'}
-          </p>
+            <Icon name="sparkles" size={18} />
+          </div>
+
+          <div>
+            <h3
+              className="card-title"
+              style={{
+                margin: 0,
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Structured Requirements
+            </h3>
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-muted)',
+                marginTop: '0.125rem',
+                margin: 0,
+              }}
+            >
+              {hasExtracted && metadata?.extractedAt
+                ? `Extracted on ${new Date(metadata.extractedAt).toLocaleString()}`
+                : 'Extracted competencies, required skills, and preferred qualifications.'}
+            </p>
+          </div>
         </div>
 
         {onExtract && (
@@ -66,6 +108,7 @@ export const JobRequirements = ({
             loading={isExtracting}
             disabled={isExtracting}
             data-testid="extract-requirements-btn"
+            style={{ borderRadius: 'var(--radius-full)', padding: '0.4rem 0.85rem' }}
           >
             <Icon name="refresh" size={14} />
             <span>{hasExtracted ? 'Re-extract Requirements' : 'Extract Requirements'}</span>
@@ -84,10 +127,10 @@ export const JobRequirements = ({
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-md)',
             fontSize: 'var(--text-sm)',
-            marginBottom: '1rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
+            animation: 'fadeIn 0.2s ease-out',
           }}
           data-testid="requirements-error"
         >
@@ -121,15 +164,30 @@ export const JobRequirements = ({
             textAlign: 'center',
             padding: '2.5rem 1.5rem',
             backgroundColor: 'var(--bg-surface)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px dashed var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px dashed var(--border-default)',
           }}
           data-testid="requirements-not-extracted"
         >
-          <div style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-            <Icon name="search" size={28} />
+          <div
+            style={{
+              width: '3rem',
+              height: '3rem',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--bg-container-low)',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 0.75rem',
+            }}
+          >
+            <Icon name="sparkles" size={20} />
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 'var(--text-sm)', margin: '0 0 0.25rem' }}>
+            Structured requirements not extracted yet
+          </p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', margin: 0 }}>
             Structured requirements have not been extracted for this job description yet.
           </p>
           {onExtract && (
@@ -143,11 +201,11 @@ export const JobRequirements = ({
       {/* Extracted content */}
       {!isExtracting && hasExtracted && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Summary counts */}
+          {/* Summary counts bar */}
           <div
             style={{
               display: 'flex',
-              gap: '1rem',
+              gap: '0.75rem',
               flexWrap: 'wrap',
               fontSize: 'var(--text-xs)',
             }}
@@ -155,23 +213,45 @@ export const JobRequirements = ({
             <span
               style={{
                 backgroundColor: 'var(--bg-surface)',
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
+                padding: '0.4rem 0.85rem',
+                borderRadius: 'var(--radius-full)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-secondary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--danger)',
+                }}
+              />
               Required Skills: <strong style={{ color: 'var(--text-primary)' }} className="tabular-nums">{requiredSkills.length}</strong>
             </span>
             <span
               style={{
                 backgroundColor: 'var(--bg-surface)',
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
+                padding: '0.4rem 0.85rem',
+                borderRadius: 'var(--radius-full)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-secondary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--accent-primary)',
+                }}
+              />
               Preferred Skills: <strong style={{ color: 'var(--text-primary)' }} className="tabular-nums">{preferredSkills.length}</strong>
             </span>
           </div>
@@ -181,9 +261,10 @@ export const JobRequirements = ({
             <div
               style={{
                 textAlign: 'center',
-                padding: '1.5rem 1rem',
+                padding: '2rem 1rem',
                 backgroundColor: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-subtle)',
               }}
               data-testid="requirements-empty"
             >
@@ -196,29 +277,35 @@ export const JobRequirements = ({
           {/* Required Skills Section */}
           {requiredSkills.length > 0 && (
             <div data-testid="required-skills-section">
-              <h4
+              <div
                 style={{
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--danger)',
-                  marginBottom: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
+                  marginBottom: '0.85rem',
                 }}
               >
-                <span>Required Skills</span>
+                <h4
+                  style={{
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                  }}
+                >
+                  Required Skills
+                </h4>
                 <Badge variant="required" size="sm">
                   {requiredSkills.length}
                 </Badge>
-              </h4>
+              </div>
 
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
                   gap: '0.75rem',
                 }}
                 data-testid="required-skills-list"
@@ -229,12 +316,12 @@ export const JobRequirements = ({
                     style={{
                       backgroundColor: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '0.75rem 1rem',
+                      borderRadius: 'var(--radius-lg, 0.75rem)',
+                      padding: '0.85rem 1rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.25rem',
-                      transition: 'border-color var(--transition-fast)',
+                      gap: '0.35rem',
+                      transition: 'border-color var(--transition-fast), transform var(--transition-fast)',
                     }}
                     data-testid={`required-skill-${skill.skillName}`}
                   >
@@ -247,9 +334,11 @@ export const JobRequirements = ({
                           style={{
                             fontSize: '0.7rem',
                             color: 'var(--text-muted)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            padding: '0.125rem 0.375rem',
-                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--bg-container-low)',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid var(--border-subtle)',
+                            fontWeight: 500,
                           }}
                         >
                           {skill.category}
@@ -263,7 +352,7 @@ export const JobRequirements = ({
                           color: 'var(--text-secondary)',
                           margin: '0.25rem 0 0 0',
                           fontStyle: 'italic',
-                          lineHeight: 1.4,
+                          lineHeight: 1.45,
                         }}
                       >
                         "{skill.evidence}"
@@ -278,29 +367,35 @@ export const JobRequirements = ({
           {/* Preferred Skills Section */}
           {preferredSkills.length > 0 && (
             <div data-testid="preferred-skills-section">
-              <h4
+              <div
                 style={{
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--info)',
-                  marginBottom: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
+                  marginBottom: '0.85rem',
                 }}
               >
-                <span>Preferred Skills</span>
+                <h4
+                  style={{
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                  }}
+                >
+                  Preferred Skills
+                </h4>
                 <Badge variant="preferred" size="sm">
                   {preferredSkills.length}
                 </Badge>
-              </h4>
+              </div>
 
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
                   gap: '0.75rem',
                 }}
                 data-testid="preferred-skills-list"
@@ -311,12 +406,12 @@ export const JobRequirements = ({
                     style={{
                       backgroundColor: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '0.75rem 1rem',
+                      borderRadius: 'var(--radius-lg, 0.75rem)',
+                      padding: '0.85rem 1rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.25rem',
-                      transition: 'border-color var(--transition-fast)',
+                      gap: '0.35rem',
+                      transition: 'border-color var(--transition-fast), transform var(--transition-fast)',
                     }}
                     data-testid={`preferred-skill-${skill.skillName}`}
                   >
@@ -329,9 +424,11 @@ export const JobRequirements = ({
                           style={{
                             fontSize: '0.7rem',
                             color: 'var(--text-muted)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            padding: '0.125rem 0.375rem',
-                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--bg-container-low)',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid var(--border-subtle)',
+                            fontWeight: 500,
                           }}
                         >
                           {skill.category}
@@ -345,7 +442,7 @@ export const JobRequirements = ({
                           color: 'var(--text-secondary)',
                           margin: '0.25rem 0 0 0',
                           fontStyle: 'italic',
-                          lineHeight: 1.4,
+                          lineHeight: 1.45,
                         }}
                       >
                         "{skill.evidence}"

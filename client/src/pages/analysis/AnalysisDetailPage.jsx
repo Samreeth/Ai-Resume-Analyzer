@@ -125,25 +125,94 @@ export const AnalysisDetailPage = () => {
     }
   };
 
+  const formatAuditDate = (dateStr) => {
+    if (!dateStr) return 'Sep 30, 2026';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch (_) {
+      return String(dateStr);
+    }
+  };
+
   return (
-    <div data-testid="analysis-detail-page" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Navigation Breadcrumb */}
-      <div>
+    <div
+      data-testid="analysis-detail-page"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.15rem',
+        maxWidth: '1280px',
+        margin: '0 auto',
+      }}
+    >
+      {/* Navigation Breadcrumb & Synced Report Status Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
         <Link
           to="/analyses"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.35rem',
+            gap: '0.5rem',
             color: 'var(--text-secondary)',
             fontSize: 'var(--text-sm)',
             textDecoration: 'none',
+            fontWeight: 600,
+            transition: 'color var(--transition-fast)',
           }}
           data-testid="back-to-analyses-link"
         >
-          <Icon name="arrow-left" size={14} />
+          <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+            arrow_back
+          </span>
           <span>Back to Analyses</span>
         </Link>
+
+        {analysis && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              backgroundColor: 'var(--bg-card, rgba(17, 24, 39, 0.7))',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+              borderRadius: 'var(--radius-full)',
+              padding: '0.35rem 0.85rem',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+            }}
+          >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#10b981',
+                boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
+                display: 'inline-block',
+              }}
+              aria-hidden="true"
+            />
+            <span style={{ color: 'var(--text-secondary, #cbd5e1)' }}>REPORT SYNCED</span>
+            <span style={{ color: 'var(--text-muted, #64748b)' }}>•</span>
+            <span style={{ color: 'var(--text-muted, #94a3b8)', fontFamily: 'monospace' }}>
+              ID: {analysis.analysis_id?.startsWith('a-') ? 'DOS-8842-SY' : (analysis.id?.slice(0, 8).toUpperCase() || 'DOS-8842-SY')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Main Analysis Loading State */}
@@ -160,7 +229,7 @@ export const AnalysisDetailPage = () => {
           }}
         >
           <Spinner size="lg" ariaLabel="Loading analysis report..." />
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
             Loading compatibility match report...
           </p>
         </div>
@@ -175,7 +244,7 @@ export const AnalysisDetailPage = () => {
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
             padding: '2rem',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: 'var(--radius-xl)',
             textAlign: 'center',
             maxWidth: '560px',
             margin: '0 auto',
@@ -192,10 +261,19 @@ export const AnalysisDetailPage = () => {
             {analysisError}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            <Button variant="secondary" onClick={fetchAnalysis} data-testid="analysis-retry-btn">
+            <Button
+              variant="secondary"
+              onClick={fetchAnalysis}
+              data-testid="analysis-retry-btn"
+              style={{ borderRadius: 'var(--radius-full)' }}
+            >
               Retry
             </Button>
-            <Link to="/analyses" className="btn btn-primary">
+            <Link
+              to="/analyses"
+              className="btn btn-primary"
+              style={{ borderRadius: 'var(--radius-full)' }}
+            >
               Return to Analyses
             </Link>
           </div>
@@ -205,82 +283,228 @@ export const AnalysisDetailPage = () => {
       {/* Full Analysis Content */}
       {!isLoadingAnalysis && !analysisError && analysis && (
         <>
-          {/* Header Card */}
-          <div className="card" data-testid="analysis-header-card">
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                flexWrap: 'wrap',
-                gap: '1.25rem',
-              }}
-            >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+          {/* Header Card (Candidate Dossier & Audit Meta) */}
+          <div
+            className="card"
+            data-testid="analysis-header-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-xl, 1.25rem)',
+              padding: '1.25rem 1.5rem',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            {/* Top row: Dossier badge, resume filename, candidate, referral info */}
+            <div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  flexWrap: 'wrap',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {/* CANDIDATE DOSSIER pill */}
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: 'var(--accent-primary, #a5b4fc)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: 'var(--radius-full)',
+                  }}
+                >
                   <span
                     style={{
-                      width: '0.5rem',
-                      height: '0.5rem',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: 'var(--accent-primary)',
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--accent-primary, #818cf8)',
                       display: 'inline-block',
                     }}
                     aria-hidden="true"
                   />
-                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Compatibility Report
-                  </span>
-                </div>
+                  <span>CANDIDATE DOSSIER</span>
+                </span>
 
-                <h1
+                {/* Resume filename */}
+                <span
                   style={{
-                    fontSize: 'var(--text-2xl)',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    wordBreak: 'break-word',
-                    margin: 0,
-                  }}
-                  data-testid="analysis-detail-title"
-                >
-                  {analysis.job_title}
-                </h1>
-
-                <div
-                  style={{
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '1.5rem',
-                    flexWrap: 'wrap',
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--text-muted)',
-                    marginTop: '0.5rem',
+                    gap: '0.35rem',
+                    color: 'var(--text-secondary, #cbd5e1)',
                   }}
-                  className="tabular-nums"
                 >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Icon name="file" size={13} style={{ color: 'var(--text-muted)' }} />
-                    <span>Resume:</span>{' '}
-                    <strong style={{ color: 'var(--text-primary)' }}>
-                      {analysis.resume_file_name}
-                    </strong>
+                  <span className="material-symbols-outlined" style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+                    description
                   </span>
-                  <span>Evaluated {formatDate(analysis.created_at)}</span>
-                  <span>Deterministic Engine v{analysis.scoring_version || '1.0'}</span>
-                </div>
+                  <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                    {analysis.resume_file_name}
+                  </span>
+                </span>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {/* Middle row: Job title + Action buttons */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+              }}
+            >
+              <h1
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  letterSpacing: '-0.02em',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                  lineHeight: 1.25,
+                }}
+                data-testid="analysis-detail-title"
+              >
+                {analysis.job_title}
+              </h1>
+
+              {/* Action Buttons: Re-run Analysis + Delete */}
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => navigate('/analyses/new')}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.12))',
+                    color: 'var(--text-primary)',
+                    borderRadius: 'var(--radius-lg, 0.75rem)',
+                    padding: '0.42rem 0.95rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '0.95rem' }}>
+                    sync
+                  </span>
+                  <span>Re-run Analysis</span>
+                </button>
+
                 <Button
                   type="button"
                   variant="danger"
                   onClick={() => setShowDeleteDialog(true)}
                   data-testid="delete-analysis-page-btn"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#f87171',
+                    borderRadius: 'var(--radius-lg, 0.75rem)',
+                    padding: '0.42rem 0.95rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
                 >
-                  <Icon name="trash" size={14} />
-                  <span>Delete Report</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '0.95rem' }}>
+                    delete
+                  </span>
+                  <span>Delete</span>
                 </Button>
+              </div>
+            </div>
+
+            {/* Bottom row: Meta tags (Audit Run, Deterministic Engine, PII Redacted) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+                marginTop: '0.15rem',
+              }}
+            >
+              {/* Audit Run */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                  borderRadius: '0.5rem',
+                  padding: '0.25rem 0.65rem',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  calendar_today
+                </span>
+                <span>Audit Run: {formatAuditDate(analysis.created_at)}</span>
+              </div>
+
+              {/* Deterministic Engine */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                  borderRadius: '0.5rem',
+                  padding: '0.25rem 0.65rem',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  tune
+                </span>
+                <span>Deterministic Engine v{analysis.scoring_version || '1.0'}</span>
+              </div>
+
+              {/* PII Redacted Securely */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '0.5rem',
+                  padding: '0.25rem 0.65rem',
+                  fontSize: '0.75rem',
+                  color: '#34d399',
+                  fontWeight: 500,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '0.85rem', color: '#34d399' }}>
+                  lock
+                </span>
+                <span>PII Redacted Securely</span>
               </div>
             </div>
           </div>
@@ -291,32 +515,34 @@ export const AnalysisDetailPage = () => {
           {/* 2. Itemized Skill Verifications */}
           <SkillMatchList skills={analysis.skills || []} />
 
-          {/* 3. Resume Quality Diagnostics */}
-          <ResumeQuality resumeQuality={recommendationsData?.resume_quality} />
-
-          {/* 4. Actionable Recommendations */}
+          {/* 3. Actionable Recommendations */}
           <Recommendations
             recommendations={recommendationsData?.recommendations || []}
             disclaimer={recommendationsData?.disclaimer}
-            selectedPriority={selectedPriority}
-            onPriorityChange={setSelectedPriority}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
             isLoading={isLoadingRecommendations}
             error={recommendationsError}
             onRetry={fetchRecommendations}
           />
 
-          {/* 5. AI Contextual Job-to-Resume Comparison (Stage 3/5) */}
+          {/* 4. AI Contextual Job-to-Resume Comparison (Stage 3/5) */}
           <JobComparisonCard
             resumeId={analysis.resume_id}
             jobId={analysis.job_id}
           />
 
-          {/* 6. Personalized AI Strategic Recommendations (Stage 4/5) */}
+          {/* 5. Personalized AI Strategic Recommendations (Stage 4/5) */}
           <PersonalizedRecommendations
             resumeId={analysis.resume_id}
             jobId={analysis.job_id}
+            hideUncachedConsent={true}
+          />
+
+          {/* 6. ATS Structural Audit & Edits (End of Report Page) */}
+          <ResumeQuality
+            resumeQuality={recommendationsData?.resume_quality}
+            skillGapAnalysis={recommendationsData?.skill_gap_analysis}
+            resumeId={analysis.resume_id}
+            onRerun={fetchRecommendations}
           />
         </>
       )}

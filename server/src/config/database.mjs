@@ -15,13 +15,66 @@ export const pool = new Pool({
 
 // Avoid process crash on idle client errors
 pool.on('error', (err) => {
+  if (err.message?.includes('terminating connection') || err.code === 'ECONNRESET') {
+    return;
+  }
   console.error('[PostgreSQL Pool Error]', err.message);
 });
 
+// Wrap pool.connect for automatic WSL reconnection resilience
+const origPoolConnect = pool.connect.bind(pool);
+pool.connect = async (...args) => {
+  try {
+    return await origPoolConnect(...args);
+  } catch (err) {
+    if (
+      process.platform === 'win32' &&
+      (err.code === 'ECONNREFUSED' ||
+        err.message?.includes('terminating connection') ||
+        err.message?.includes('Connection refused') ||
+        err.name === 'AggregateError')
+    ) {
+      try {
+        console.warn('[PostgreSQL] Database pool connect lost. Attempting auto-recovery in WSL2...');
+        await execPromise('wsl -d Ubuntu -u root service postgresql start');
+        await new Promise((r) => setTimeout(r, 1200));
+        return await origPoolConnect(...args);
+      } catch (_) {
+        throw err;
+      }
+    }
+    throw err;
+  }
+};
+
 /**
- * Execute a parameterized query
+ * Execute a parameterized query with automatic WSL reconnection resilience
  */
-export const query = (text, params) => pool.query(text, params);
+export const query = async (text, params) => {
+  try {
+    return await pool.query(text, params);
+  } catch (err) {
+    // If connection was refused or terminated on Windows, auto-recover WSL service and retry once
+    if (
+      process.platform === 'win32' &&
+      (err.code === 'ECONNREFUSED' ||
+        err.message?.includes('terminating connection') ||
+        err.message?.includes('Connection refused') ||
+        err.message?.includes('closed') ||
+        err.name === 'AggregateError')
+    ) {
+      try {
+        console.warn('[PostgreSQL] Database connection lost. Attempting auto-recovery in WSL2...');
+        await execPromise('wsl -d Ubuntu -u root service postgresql start');
+        await new Promise((r) => setTimeout(r, 1200));
+        return await pool.query(text, params);
+      } catch (_) {
+        throw err;
+      }
+    }
+    throw err;
+  }
+};
 
 /**
  * Non-blocking connectivity test with automatic WSL recovery
@@ -42,6 +95,7 @@ export const testDbConnection = async (isRetry = false) => {
       (err.code === 'ECONNREFUSED' ||
         err.message?.includes('timeout') ||
         err.message?.includes('Connection refused') ||
+        err.message?.includes('terminating connection') ||
         err.name === 'AggregateError')
     ) {
       try {

@@ -19,7 +19,11 @@ import AiErrorAlert from './AiErrorAlert.jsx';
  * @param {string} props.resumeId - UUID of the candidate resume
  * @param {string} props.jobId - UUID of the target job description
  */
-export const PersonalizedRecommendations = ({ resumeId, jobId }) => {
+export const PersonalizedRecommendations = ({
+  resumeId,
+  jobId,
+  hideUncachedConsent = false,
+}) => {
   const toast = useToast();
 
   const [recommendationsData, setRecommendationsData] = useState(null);
@@ -29,6 +33,18 @@ export const PersonalizedRecommendations = ({ resumeId, jobId }) => {
   const [isStale, setIsStale] = useState(false);
   const [isUncached, setIsUncached] = useState(false);
   const [filterCategory, setFilterCategory] = useState('ALL');
+  const [hasOtherConsentCard, setHasOtherConsentCard] = useState(false);
+
+  // Check if another consent card for job comparison is already present in the DOM
+  useEffect(() => {
+    const check = () => {
+      const exists = Boolean(document.querySelector('[data-testid="job-comparison-uncached-section"]'));
+      setHasOtherConsentCard(exists);
+    };
+    check();
+    const timer = setTimeout(check, 60);
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetchRecommendations = useCallback(async () => {
     if (!resumeId || !jobId) {
@@ -67,7 +83,7 @@ export const PersonalizedRecommendations = ({ resumeId, jobId }) => {
     fetchRecommendations();
   }, [fetchRecommendations]);
 
-  const handleGenerate = async ({ forceRefresh = false } = {}) => {
+  const handleGenerate = useCallback(async ({ forceRefresh = false } = {}) => {
     try {
       setIsGenerating(true);
       setError(null);
@@ -92,7 +108,20 @@ export const PersonalizedRecommendations = ({ resumeId, jobId }) => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [resumeId, jobId, toast]);
+
+  // Listen for global trigger from the unified consent card
+  useEffect(() => {
+    const handleTrigger = (e) => {
+      if (e.detail?.consent) {
+        handleGenerate({ forceRefresh: false });
+      }
+    };
+    window.addEventListener('trigger-ai-recommendations', handleTrigger);
+    return () => {
+      window.removeEventListener('trigger-ai-recommendations', handleTrigger);
+    };
+  }, [handleGenerate]);
 
   // 1. Loading Skeleton
   if (isLoading || isGenerating) {
@@ -104,8 +133,12 @@ export const PersonalizedRecommendations = ({ resumeId, jobId }) => {
     );
   }
 
-  // 2. Uncached Initial State: Display Consent Card
+  // 2. Uncached Initial State: Display Consent Card (suppress duplicate if already shown by JobComparisonCard)
   if (isUncached && !recommendationsData) {
+    if (hideUncachedConsent || hasOtherConsentCard) {
+      return null;
+    }
+
     return (
       <div data-testid="ai-recommendations-uncached-section">
         {error && <AiErrorAlert error={error} onRetry={() => handleGenerate({ forceRefresh: false })} />}

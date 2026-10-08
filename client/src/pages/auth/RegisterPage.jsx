@@ -91,12 +91,29 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="card" style={{ padding: '2rem' }}>
+    <div
+      className="card"
+      style={{
+        padding: '2rem',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <h2
+          style={{
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em',
+            margin: 0,
+          }}
+        >
           Create an Account
         </h2>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
           Get started with automated resume analysis and job matching
         </p>
       </div>
@@ -168,16 +185,31 @@ export const RegisterPage = () => {
           variant="primary"
           loading={submitting}
           disabled={submitting}
-          style={{ width: '100%', marginTop: '0.5rem' }}
+          style={{
+            width: '100%',
+            marginTop: '0.75rem',
+            borderRadius: 'var(--radius-full)',
+            padding: '0.625rem 1.25rem',
+            fontWeight: 600,
+          }}
           data-testid="register-submit-btn"
         >
           Create Account
         </Button>
       </form>
 
-      <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: '1.5rem',
+          paddingTop: '1.25rem',
+          borderTop: '1px solid var(--border-subtle)',
+          fontSize: '0.8125rem',
+          color: 'var(--text-secondary)',
+        }}
+      >
         Already have an account?{' '}
-        <Link to="/login" style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+        <Link to="/login" style={{ fontWeight: 600, color: 'var(--accent-primary)', textDecoration: 'none' }}>
           Sign In
         </Link>
       </div>

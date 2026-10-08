@@ -133,7 +133,16 @@ export const JobDetailPage = () => {
   };
 
   return (
-    <div data-testid="job-detail-page" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div
+      data-testid="job-detail-page"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        maxWidth: '1280px',
+        margin: '0 auto',
+      }}
+    >
       {/* Navigation Breadcrumb */}
       <div>
         <Link
@@ -141,10 +150,12 @@ export const JobDetailPage = () => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.35rem',
+            gap: '0.4rem',
             color: 'var(--text-secondary)',
             fontSize: 'var(--text-sm)',
             textDecoration: 'none',
+            fontWeight: 500,
+            transition: 'color var(--transition-fast)',
           }}
           data-testid="back-to-jobs-link"
         >
@@ -162,12 +173,12 @@ export const JobDetailPage = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '40vh',
+            minHeight: '35vh',
             gap: '1rem',
           }}
         >
           <Spinner size="lg" ariaLabel="Loading job description..." />
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
             Loading job details...
           </p>
         </div>
@@ -182,27 +193,39 @@ export const JobDetailPage = () => {
             border: '1px solid var(--danger-border)',
             color: 'var(--danger)',
             padding: '2rem',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: 'var(--radius-xl)',
             textAlign: 'center',
             maxWidth: '560px',
             margin: '0 auto',
           }}
           data-testid="job-detail-error"
         >
-          <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
-            <Icon name="alert" size={28} />
+          <div
+            style={{
+              width: '3rem',
+              height: '3rem',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--danger-bg)',
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem',
+            }}
+          >
+            <Icon name="alert" size={24} />
           </div>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Job Description Not Found or Unavailable
           </h2>
-          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: 'var(--text-sm)', marginBottom: '1.5rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             {error}
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            <Button variant="secondary" onClick={fetchJob} data-testid="job-retry-btn">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+            <Button variant="secondary" onClick={fetchJob} data-testid="job-retry-btn" style={{ borderRadius: 'var(--radius-full)' }}>
               Retry
             </Button>
-            <Link to="/jobs" className="btn btn-primary" data-testid="job-error-back-btn">
+            <Link to="/jobs" className="btn btn-primary" data-testid="job-error-back-btn" style={{ borderRadius: 'var(--radius-full)' }}>
               Return to Jobs
             </Link>
           </div>
@@ -213,7 +236,17 @@ export const JobDetailPage = () => {
       {!isLoading && !error && job && (
         <>
           {/* Header Card */}
-          <div className="card" data-testid="job-header-card">
+          <div
+            className="card"
+            data-testid="job-header-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-xl, 1rem)',
+              padding: '1.5rem',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
             <div
               style={{
                 display: 'flex',
@@ -224,7 +257,7 @@ export const JobDetailPage = () => {
               }}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <span
                     style={{
                       width: '0.5rem',
@@ -235,18 +268,30 @@ export const JobDetailPage = () => {
                     }}
                     aria-hidden="true"
                   />
-                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: 'var(--accent-primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      backgroundColor: 'var(--bg-container-low, rgba(99, 102, 241, 0.08))',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: 'var(--radius-full)',
+                    }}
+                  >
                     Role Specification
                   </span>
                 </div>
 
                 <h1
                   style={{
-                    fontSize: 'var(--text-2xl)',
+                    fontSize: '1.5rem',
                     fontWeight: 700,
                     color: 'var(--text-primary)',
+                    letterSpacing: '-0.02em',
                     wordBreak: 'break-word',
-                    margin: 0,
+                    margin: '0 0 0.5rem',
                   }}
                   data-testid="job-detail-title"
                 >
@@ -261,13 +306,22 @@ export const JobDetailPage = () => {
                     flexWrap: 'wrap',
                     fontSize: 'var(--text-xs)',
                     color: 'var(--text-muted)',
-                    marginTop: '0.5rem',
                   }}
                   className="tabular-nums"
                 >
-                  <span>Created {formatDate(job.created_at)}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                      calendar_today
+                    </span>
+                    <span>Created {formatDate(job.created_at)}</span>
+                  </span>
                   {job.updated_at && job.updated_at !== job.created_at && (
-                    <span>Last updated {formatDate(job.updated_at)}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                        update
+                      </span>
+                      <span>Last updated {formatDate(job.updated_at)}</span>
+                    </span>
                   )}
                 </div>
               </div>
@@ -282,6 +336,7 @@ export const JobDetailPage = () => {
                     setUpdateError('');
                   }}
                   data-testid="toggle-edit-job-btn"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 >
                   {isEditing ? (
                     <>
@@ -301,6 +356,7 @@ export const JobDetailPage = () => {
                   variant="danger"
                   onClick={() => setShowDeleteDialog(true)}
                   data-testid="delete-job-page-btn"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 >
                   <Icon name="trash" size={14} />
                   <span>Delete</span>
@@ -311,7 +367,18 @@ export const JobDetailPage = () => {
 
           {/* Edit Form or Description Display */}
           {isEditing ? (
-            <div className="card" data-testid="edit-job-card">
+            <div
+              className="card"
+              data-testid="edit-job-card"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-xl, 1rem)',
+                padding: '1.5rem',
+                boxShadow: 'var(--shadow-md)',
+                animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
               <div
                 style={{
                   borderBottom: '1px solid var(--border-subtle)',
@@ -322,7 +389,7 @@ export const JobDetailPage = () => {
                 <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                   Edit Job Description
                 </h2>
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '0.25rem', margin: 0 }}>
                   Update the title or description text for this role.
                 </p>
               </div>
@@ -340,18 +407,34 @@ export const JobDetailPage = () => {
               />
             </div>
           ) : (
-            <div className="card" data-testid="job-description-card">
+            <div
+              className="card"
+              data-testid="job-description-card"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-xl, 1rem)',
+                padding: '1.5rem',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
               <div
                 style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   borderBottom: '1px solid var(--border-subtle)',
                   paddingBottom: '0.75rem',
                   marginBottom: '1rem',
                 }}
               >
-                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Icon name="briefcase" size={16} style={{ color: 'var(--accent-primary)' }} />
+                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+                  <Icon name="briefcase" size={17} style={{ color: 'var(--accent-primary)' }} />
                   <span>Role Description</span>
                 </h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }} className="tabular-nums">
+                  {job.description ? `${job.description.split(/\s+/).filter(Boolean).length} words` : ''}
+                </span>
               </div>
 
               <div
@@ -363,7 +446,7 @@ export const JobDetailPage = () => {
                   wordBreak: 'break-word',
                   backgroundColor: 'var(--bg-surface)',
                   padding: '1.25rem',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: 'var(--radius-lg, 0.75rem)',
                   border: '1px solid var(--border-subtle)',
                 }}
                 data-testid="job-full-description"

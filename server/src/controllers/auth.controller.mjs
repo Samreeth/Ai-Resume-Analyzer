@@ -22,6 +22,7 @@ export const login = async (req, res, next) => {
     return sendSuccess(res, { token, user }, 'Login successful', 200);
   } catch (error) {
     next(error);
+    console.log("Login failed", error);
   }
 };
 
