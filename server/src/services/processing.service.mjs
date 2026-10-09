@@ -3,7 +3,7 @@
  * Manages atomic claims, timeout deadlines, token fencing, retries, and recovery.
  */
 
-import { query } from '../config/database.mjs';
+import { query, ensureSchema } from '../config/database.mjs';
 import storageService from './storage.service.mjs';
 import { extractTextFromPdf } from './extractors/pdf.extractor.mjs';
 import { extractTextFromDocx } from './extractors/docx.extractor.mjs';
@@ -195,11 +195,13 @@ export const processResume = async ({ userId, resumeId, options = {} }) => {
   // Step 1: Pre-checks (Ownership, Completed, Processing, Max Attempts, Cooldown)
   // These checks execute BEFORE touching the semaphore to prevent permit starvation.
   // ==========================================================================
+  await ensureSchema();
   const preCheckQuery = `
     SELECT
       resume_id,
       user_id,
       file_path,
+      file_data,
       mime_type,
       extraction_status,
       processing_attempts,
@@ -425,9 +427,25 @@ export const processResume = async ({ userId, resumeId, options = {} }) => {
     attemptsCount = claimResult.rows[0].processing_attempts;
 
     // ========================================================================
-    // Step 4: Read File from Storage and Execute Extraction
+    // Step 4: Read File from Database or Storage and Execute Extraction
     // ========================================================================
-    const fileBuffer = await storageService.readFileBuffer(resume.file_path);
+    let fileBuffer = resume.file_data;
+    if (!fileBuffer || fileBuffer.length === 0) {
+      try {
+        fileBuffer = await storageService.readFileBuffer(resume.file_path);
+      } catch (storageErr) {
+        if (storageErr.code === 'STORAGE_READ_ERROR' || storageErr.code === 'ENOENT') {
+          const userErr = new ExtractionError(
+            'FILE_NOT_FOUND',
+            'Document file is no longer available in server cache. Please re-upload your resume.',
+            404,
+            { resumeId, canRetry: false }
+          );
+          throw userErr;
+        }
+        throw storageErr;
+      }
+    }
 
     let extracted;
     const isDocx =

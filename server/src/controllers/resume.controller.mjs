@@ -1,4 +1,5 @@
 import resumeService from '../services/resume.service.mjs';
+import processingService from '../services/processing.service.mjs';
 import { sendSuccess } from '../utils/response.mjs';
 import {
   resumeIdParamSchema,
@@ -17,11 +18,23 @@ export const upload = async (req, res, next) => {
       mimeType: req.file.mimetype.toLowerCase(),
     });
 
+    // Auto-process extraction immediately upon upload so text is extracted right away
+    try {
+      const processed = await processingService.processResume({
+        userId: req.user.userId,
+        resumeId: resume.resume_id,
+      });
+      resume.extraction_status = processed.extractionStatus;
+    } catch (procErr) {
+      console.warn(`[UPLOAD] Auto-extraction note for resume ${resume.resume_id}: ${procErr.message}`);
+    }
+
     return sendSuccess(res, { resume }, 'Resume uploaded successfully', 201);
   } catch (error) {
     next(error);
   }
 };
+
 
 /**
  * Handle listing resumes for the authenticated user

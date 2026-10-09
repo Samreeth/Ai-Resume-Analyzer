@@ -1,5 +1,6 @@
 import path from 'path';
-import { pool, query } from '../config/database.mjs';
+import crypto from 'crypto';
+import { pool, query, ensureSchema } from '../config/database.mjs';
 import storageService from './storage.service.mjs';
 import {
   computeFileHash,
@@ -18,23 +19,30 @@ import {
  * @returns {Promise<object>} Created resume record
  */
 export const createResume = async ({ userId, originalName, buffer, mimeType }) => {
+  await ensureSchema();
   const extension = path.extname(originalName).toLowerCase();
   const displayName = sanitizeDisplayName(originalName, extension);
   const fileSize = buffer.length;
   const fileHash = computeFileHash(buffer);
 
-  // 1. Staged atomic file write to storage
-  const { relativePath } = await storageService.saveFileAtomic(buffer, extension);
+  // 1. Staged atomic file write to storage (best effort on serverless)
+  let relativePath = `resumes/${crypto.randomUUID()}${extension}`;
+  try {
+    const saved = await storageService.saveFileAtomic(buffer, extension);
+    relativePath = saved.relativePath;
+  } catch (storageErr) {
+    console.warn(`[STORAGE] Best-effort file write note: ${storageErr.message}`);
+  }
 
-  // 2. Database persistence with rollback coordination
+  // 2. Database persistence with rollback coordination (persisting buffer in file_data for serverless durability)
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const insertSql = `
       INSERT INTO resumes (
-        user_id, file_name, file_path, file_size, mime_type, file_hash, extraction_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+        user_id, file_name, file_path, file_data, file_size, mime_type, file_hash, extraction_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING')
       RETURNING resume_id, file_name, file_size, mime_type, file_hash, extraction_status, uploaded_at, updated_at
     `;
 
@@ -42,6 +50,7 @@ export const createResume = async ({ userId, originalName, buffer, mimeType }) =
       userId,
       displayName,
       relativePath,
+      buffer,
       fileSize,
       mimeType,
       fileHash,
@@ -55,17 +64,14 @@ export const createResume = async ({ userId, originalName, buffer, mimeType }) =
     // Clean up stored file if database insertion failed
     try {
       await storageService.deleteFile(relativePath, 'upload-rollback');
-    } catch (cleanupErr) {
-      console.error(
-        `[CRITICAL STORAGE ERROR] Failed to clean up stored file during upload rollback: ${cleanupErr.message}`
-      );
-    }
+    } catch (_) {}
 
     throw err;
   } finally {
     client.release();
   }
 };
+
 
 /**
  * List resumes for an authenticated user with pagination and upload-time ordering

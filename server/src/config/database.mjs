@@ -123,8 +123,23 @@ export const testDbConnection = async (isRetry = false) => {
   }
 };
 
+let schemaEnsured = false;
+export const ensureSchema = async () => {
+  if (schemaEnsured) return;
+  try {
+    await query('ALTER TABLE resumes ADD COLUMN IF NOT EXISTS file_data BYTEA;');
+    schemaEnsured = true;
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      console.warn('[PostgreSQL] ensureSchema note:', err.message);
+    }
+  }
+};
+
 export default {
   pool,
   query,
   testDbConnection,
+  ensureSchema,
 };
+

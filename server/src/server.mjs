@@ -1,6 +1,6 @@
 import app from './app.mjs';
 import config from './config/env.mjs';
-import { testDbConnection, pool } from './config/database.mjs';
+import { testDbConnection, pool, ensureSchema } from './config/database.mjs';
 import { runStartupRecovery, runStaleRecovery } from './services/processing.service.mjs';
 
 let server = null;
@@ -23,6 +23,9 @@ export const startServer = async () => {
   const dbStatus = await testDbConnection();
   if (dbStatus.connected) {
     console.log(`[PostgreSQL] Connected successfully at ${dbStatus.timestamp}`);
+
+    // Ensure database schema (e.g. file_data column)
+    await ensureSchema();
 
     // 2 & 3. Run and complete startup recovery BEFORE binding HTTP listener
     try {
