@@ -6,11 +6,19 @@ import config from './env.mjs';
 const execPromise = util.promisify(exec);
 const { Pool } = pg;
 
+const isCloudDatabase = Boolean(
+  config.databaseUrl?.includes('neon.tech') ||
+  config.databaseUrl?.includes('sslmode=require') ||
+  config.databaseUrl?.includes('amazonaws.com') ||
+  config.env === 'production'
+);
+
 export const pool = new Pool({
   connectionString: config.databaseUrl,
-  connectionTimeoutMillis: 3000,
+  connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
   max: 20,
+  ...(isCloudDatabase ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 // Avoid process crash on idle client errors
