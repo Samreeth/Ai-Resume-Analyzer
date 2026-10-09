@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Button from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
+import { BorderBeam } from '@/components/ui/border-beam';
+import { useTheme } from '../../hooks/useTheme.js';
 
 /**
  * Context-Aware AI Consent Card Component
@@ -26,6 +28,16 @@ export const AiConsentCard = ({
   secondaryButtonLabel,
   onSecondarySubmit,
 }) => {
+  let currentTheme = 'light';
+  try {
+    const themeContext = useTheme();
+    if (themeContext?.theme) {
+      currentTheme = themeContext.theme;
+    }
+  } catch {
+    // Gracefully fallback if rendered outside ThemeProvider
+  }
+
   const [hasConsented, setHasConsented] = useState(false);
 
   const isResumeOnly = type === 'resume-profile';
@@ -70,18 +82,18 @@ export const AiConsentCard = ({
     }
   };
 
-  return (
+  const cardElement = (
     <div
       className="card"
       style={{
         border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
-        backgroundColor: 'var(--bg-card, #111622)',
+        backgroundColor: 'var(--bg-card, rgb(23, 24, 26))',
         borderRadius: 'var(--radius-xl, 1.25rem)',
-        padding: '1.25rem 1.5rem',
-        boxShadow: 'var(--shadow-sm)',
+        padding: !isResumeOnly ? '2.5rem 2.75rem' : '1.25rem 1.5rem',
+        boxShadow: !isResumeOnly ? 'var(--shadow-md)' : 'var(--shadow-sm)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.95rem',
+        gap: !isResumeOnly ? '1.35rem' : '0.95rem',
       }}
       data-testid="ai-consent-card"
     >
@@ -138,10 +150,10 @@ export const AiConsentCard = ({
         style={{
           padding: '0.5rem 0.85rem',
           borderRadius: '0.5rem',
-          backgroundColor: 'rgba(0, 0, 0, 0.25)',
+          backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
           border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.06))',
           fontSize: '0.775rem',
-          color: 'var(--text-secondary, #cbd5e1)',
+          color: 'var(--text-secondary, #94a3b8)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.6rem',
@@ -256,6 +268,24 @@ export const AiConsentCard = ({
       </form>
     </div>
   );
+
+  if (!isResumeOnly) {
+    return (
+      <div style={{ padding: '6px', width: '100%', boxSizing: 'border-box' }}>
+        <BorderBeam
+          size="md"
+          colorVariant="colorful"
+          theme={currentTheme === 'dark' ? 'dark' : 'light'}
+          borderRadius={20}
+          style={{ width: '100%' }}
+        >
+          {cardElement}
+        </BorderBeam>
+      </div>
+    );
+  }
+
+  return cardElement;
 };
 
 export default AiConsentCard;

@@ -12,6 +12,7 @@ import Button from '../../components/common/Button.jsx';
 import Icon from '../../components/common/Icon.jsx';
 import JobComparisonCard from '../../components/ai/JobComparisonCard.jsx';
 import PersonalizedRecommendations from '../../components/ai/PersonalizedRecommendations.jsx';
+import { AITextLoading } from '@/components/ui/ai-text-loading';
 
 /**
  * Detailed Compatibility Analysis Report Page
@@ -186,7 +187,7 @@ export const AnalysisDetailPage = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: 'var(--bg-card, rgba(17, 24, 39, 0.7))',
+              backgroundColor: 'var(--bg-card, rgb(23, 24, 26))',
               border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
               borderRadius: 'var(--radius-full)',
               padding: '0.35rem 0.85rem',
@@ -206,7 +207,7 @@ export const AnalysisDetailPage = () => {
               }}
               aria-hidden="true"
             />
-            <span style={{ color: 'var(--text-secondary, #cbd5e1)' }}>REPORT SYNCED</span>
+            <span style={{ color: '#34d399' }}>REPORT SYNCED</span>
             <span style={{ color: 'var(--text-muted, #64748b)' }}>•</span>
             <span style={{ color: 'var(--text-muted, #94a3b8)', fontFamily: 'monospace' }}>
               ID: {analysis.analysis_id?.startsWith('a-') ? 'DOS-8842-SY' : (analysis.id?.slice(0, 8).toUpperCase() || 'DOS-8842-SY')}
@@ -228,10 +229,15 @@ export const AnalysisDetailPage = () => {
             gap: '1rem',
           }}
         >
-          <Spinner size="lg" ariaLabel="Loading analysis report..." />
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
-            Loading compatibility match report...
-          </p>
+          <AITextLoading
+            texts={[
+              "Loading compatibility match report...",
+              "Verifying candidate skill evidence...",
+              "Analyzing contextual qualifications...",
+              "Almost ready...",
+            ]}
+            interval={1100}
+          />
         </div>
       )}
 
@@ -525,10 +531,12 @@ export const AnalysisDetailPage = () => {
           />
 
           {/* 4. AI Contextual Job-to-Resume Comparison (Stage 3/5) */}
-          <JobComparisonCard
-            resumeId={analysis.resume_id}
-            jobId={analysis.job_id}
-          />
+          <div style={{ margin: '0.75rem 0' }}>
+            <JobComparisonCard
+              resumeId={analysis.resume_id}
+              jobId={analysis.job_id}
+            />
+          </div>
 
           {/* 5. Personalized AI Strategic Recommendations (Stage 4/5) */}
           <PersonalizedRecommendations

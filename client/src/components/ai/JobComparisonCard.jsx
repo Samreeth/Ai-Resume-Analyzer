@@ -9,6 +9,8 @@ import EvidenceSnippet from './EvidenceSnippet.jsx';
 import AiConsentCard from './AiConsentCard.jsx';
 import AiLoadingSkeleton from './AiLoadingSkeleton.jsx';
 import AiErrorAlert from './AiErrorAlert.jsx';
+import { BorderBeam } from '@/components/ui/border-beam';
+import { useTheme } from '../../hooks/useTheme.js';
 
 /**
  * Job Comparison Card Component
@@ -21,6 +23,15 @@ import AiErrorAlert from './AiErrorAlert.jsx';
  */
 export const JobComparisonCard = ({ resumeId, jobId }) => {
   const toast = useToast();
+  let currentTheme = 'light';
+  try {
+    const themeContext = useTheme();
+    if (themeContext?.theme) {
+      currentTheme = themeContext.theme;
+    }
+  } catch {
+    // fallback if outside ThemeProvider
+  }
 
   const [comparisonData, setComparisonData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,7 +186,22 @@ export const JobComparisonCard = ({ resumeId, jobId }) => {
   const cacheBadgeText = comparisonData?.version ? `Cached • v${comparisonData.version}` : 'Cached';
 
   return (
-    <div className="card" data-testid="job-comparison-card">
+    <div style={{ padding: '6px', width: '100%', boxSizing: 'border-box' }}>
+      <BorderBeam
+        size="md"
+        colorVariant="colorful"
+        theme={currentTheme === 'dark' ? 'dark' : 'light'}
+        borderRadius={20}
+        style={{ width: '100%' }}
+      >
+        <div
+          className="card"
+          data-testid="job-comparison-card"
+          style={{
+            padding: '2.25rem 2.5rem',
+            borderRadius: 'var(--radius-xl, 1.25rem)',
+          }}
+        >
       {/* Header and Actions */}
       <div
         className="card-header"
@@ -552,9 +578,11 @@ export const JobComparisonCard = ({ resumeId, jobId }) => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
-  );
+    </BorderBeam>
+  </div>
+);
 };
 
 export default JobComparisonCard;

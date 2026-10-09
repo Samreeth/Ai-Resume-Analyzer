@@ -172,7 +172,7 @@ export const DashboardPage = () => {
             textAlign: 'center',
             maxWidth: '520px',
             margin: '0 auto',
-            boxShadow: 'var(--shadow-sm)',
+            boxShadow: 'none',
           }}
         >
           <span
@@ -215,6 +215,7 @@ export const DashboardPage = () => {
   return (
     <div
       data-testid="dashboard-content"
+      className="dashboard-page"
       style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}
     >
       {/* 1. Top Welcome & Global Action Header */}
@@ -334,6 +335,7 @@ export const DashboardPage = () => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            boxShadow: 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -436,6 +438,7 @@ export const DashboardPage = () => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            boxShadow: 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -528,6 +531,7 @@ export const DashboardPage = () => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            boxShadow: 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -624,6 +628,7 @@ export const DashboardPage = () => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            boxShadow: 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -724,7 +729,7 @@ export const DashboardPage = () => {
             backgroundColor: 'var(--bg-card)',
             borderRadius: 'var(--radius-xl)',
             border: '1px solid var(--border-subtle)',
-            boxShadow: 'var(--shadow-sm)',
+            boxShadow: 'none',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -1187,7 +1192,7 @@ export const DashboardPage = () => {
               padding: '1.25rem',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: 'none',
             }}
           >
             <div
@@ -1372,7 +1377,7 @@ export const DashboardPage = () => {
               padding: '1.25rem',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: 'none',
             }}
           >
             <div
@@ -1584,7 +1589,7 @@ export const DashboardPage = () => {
         }}
       >
         {/* Recent Resumes List */}
-        <div className="card" style={{ padding: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="card" style={{ padding: '1.25rem', boxShadow: 'none' }}>
           <div
             style={{
               display: 'flex',
@@ -1711,7 +1716,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Recent Job Descriptions List */}
-        <div className="card" style={{ padding: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="card" style={{ padding: '1.25rem', boxShadow: 'none' }}>
           <div
             style={{
               display: 'flex',

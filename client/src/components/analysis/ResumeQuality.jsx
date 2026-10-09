@@ -73,7 +73,7 @@ export const ResumeQuality = ({
       className="card"
       data-testid="resume-quality-card"
       style={{
-        backgroundColor: 'var(--bg-card, #111622)',
+        backgroundColor: 'var(--bg-card, rgb(23, 24, 26))',
         border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
         borderRadius: 'var(--radius-xl, 1.25rem)',
         padding: '1.25rem 1.5rem',
@@ -157,8 +157,8 @@ export const ResumeQuality = ({
               key={item.key}
               data-testid={`section-status-${item.key}`}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.04)',
+                backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
+                border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.05))',
                 borderRadius: '0.5rem',
                 padding: '0.55rem 1rem',
                 display: 'flex',
@@ -220,8 +220,8 @@ export const ResumeQuality = ({
 
         <div
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.25)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
+            backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.07))',
             borderRadius: '0.75rem',
             padding: '0.85rem 1.15rem',
             display: 'flex',
@@ -236,11 +236,11 @@ export const ResumeQuality = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                backgroundColor: 'rgba(245, 158, 11, 0.14)',
                 border: '1px solid rgba(245, 158, 11, 0.3)',
                 borderRadius: '0.25rem',
                 padding: '0.15rem 0.55rem',
-                color: '#f59e0b',
+                color: '#fbbf24',
                 fontSize: '0.7rem',
                 fontWeight: 700,
                 letterSpacing: '0.05em',
@@ -277,7 +277,7 @@ export const ResumeQuality = ({
                 textDecorationColor: '#f59e0b',
                 textUnderlineOffset: '3px',
                 fontWeight: 600,
-                color: '#ffffff',
+                color: 'var(--text-primary)',
               }}
             >
               {preferredSkillName}

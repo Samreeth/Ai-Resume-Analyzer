@@ -1,293 +1,241 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
-import { useToast } from '../../hooks/useToast.js';
 import { useTheme } from '../../hooks/useTheme.js';
-import Button from '../common/Button.jsx';
 
 /**
  * Top Navbar component
- * 56px header with breadcrumbs, quick search, notifications, theme toggle, and user session menu.
+ * Curved floating SaaS header matching the reference design.
  *
  * @param {object} props
  * @param {function} [props.onToggleSidebar] - Optional sidebar toggle for mobile
  */
 export const Navbar = ({ onToggleSidebar }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const toast = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await logout();
-      toast.info('You have been logged out.');
-      navigate('/login');
-    } catch (_) {
-      // Non-blocking logout error
-    } finally {
-      setLoggingOut(false);
-    }
-  };
 
   const getInitials = (name) => {
-    if (!name) return 'U';
-    const parts = name.trim().split(/\s+/);
+    if (!name) return 'P';
+    const clean = name.trim();
+    if (!clean) return 'P';
+    const parts = clean.split(/\s+/);
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
-    return parts[0][0].toUpperCase();
-  };
-
-  // Determine page title for breadcrumb
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path.includes('/dashboard')) return 'Dashboard';
-    if (path.includes('/resumes')) return 'Resumes';
-    if (path.includes('/jobs')) return 'Jobs';
-    if (path.includes('/analyses')) return 'Analyses';
-    return 'Dashboard';
+    return clean[0].toUpperCase();
   };
 
   return (
     <header
       className="navbar"
       style={{
-        borderBottom: '1px solid var(--border-subtle)',
-        backgroundColor: 'var(--bg-surface)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '1.125rem',
+        backgroundColor: 'var(--bg-card, rgb(23, 24, 26))',
         height: '3.75rem',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 1.25rem',
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '100%',
-          padding: '0 1.5rem',
-          maxWidth: '100%',
-        }}
-      >
-        {/* Left: Mobile Toggle & Breadcrumbs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-          {onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.35rem',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--bg-card)',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-              }}
-              aria-label="Toggle navigation menu"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>
-                menu
-              </span>
-            </button>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Overview</span>
-            <span style={{ color: 'var(--border-default)' }}>/</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{getPageTitle()}</span>
-          </div>
-        </div>
-
-        {/* Right: Search, Notifications, User Details, Sign Out */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Quick Search Bar */}
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            className="navbar-search"
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{
-                position: 'absolute',
-                left: '0.625rem',
-                color: 'var(--text-muted)',
-                fontSize: '1.125rem',
-                pointerEvents: 'none',
-              }}
-            >
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Search anything..."
-              style={{
-                height: '2rem',
-                paddingLeft: '2rem',
-                paddingRight: '2.5rem',
-                width: '13rem',
-                backgroundColor: 'var(--bg-container-low)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8125rem',
-                color: 'var(--text-primary)',
-                outline: 'none',
-              }}
-            />
-            <kbd
-              style={{
-                position: 'absolute',
-                right: '0.5rem',
-                padding: '0.1rem 0.35rem',
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                backgroundColor: 'var(--bg-container)',
-                borderRadius: 'var(--radius-xs)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              ⌘K
-            </kbd>
-          </div>
-
-          {/* Notification Bell */}
+      {/* Left: Mobile Drawer Trigger & Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flex: 1, maxWidth: '440px' }}>
+        {onToggleSidebar && (
           <button
             type="button"
+            onClick={onToggleSidebar}
+            className="navbar-mobile-toggle"
             style={{
-              width: '2rem',
-              height: '2rem',
-              borderRadius: 'var(--radius-md)',
-              display: 'flex',
+              display: 'none',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'transparent',
-              border: 'none',
+              padding: '0.4rem',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '0.625rem',
+              backgroundColor: 'var(--bg-container-low)',
               color: 'var(--text-secondary)',
               cursor: 'pointer',
-              position: 'relative',
+              flexShrink: 0,
             }}
-            aria-label="Notifications"
+            aria-label="Toggle navigation menu"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>
-              notifications
+              menu
             </span>
-            <span
-              style={{
-                position: 'absolute',
-                top: '0.35rem',
-                right: '0.35rem',
-                width: '0.375rem',
-                height: '0.375rem',
-                backgroundColor: 'var(--accent-primary)',
-                borderRadius: 'var(--radius-full)',
-              }}
-            />
           </button>
+        )}
 
-          {/* Quick Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
+        {/* Global Quick Search Bar */}
+        <div
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+          }}
+          className="navbar-search"
+        >
+          <span
+            className="material-symbols-outlined"
             style={{
-              width: '2rem',
-              height: '2rem',
-              borderRadius: 'var(--radius-md)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'var(--bg-container)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              transition: 'all var(--transition-fast)',
+              position: 'absolute',
+              left: '0.75rem',
+              color: 'var(--text-muted, #64748b)',
+              fontSize: '1.125rem',
+              pointerEvents: 'none',
             }}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '1.15rem' }}>
-              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
+            search
+          </span>
 
-          <div
+          <input
+            type="text"
+            placeholder="Search anything..."
             style={{
-              height: '1rem',
-              width: '1px',
-              backgroundColor: 'var(--border-subtle)',
+              width: '100%',
+              height: '2.25rem',
+              paddingLeft: '2.35rem',
+              paddingRight: '2.5rem',
+              backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+              borderRadius: '0.625rem',
+              fontSize: '0.8125rem',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              transition: 'border-color var(--transition-fast)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
             }}
           />
 
-          {/* User Profile Info */}
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-              <div
-                style={{
-                  width: '2rem',
-                  height: '2rem',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.75rem',
-                }}
-                aria-hidden="true"
-              >
-                {getInitials(user.name)}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                <span
-                  style={{
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                  }}
-                  data-testid="navbar-user-name"
-                >
-                  {user.name}
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.6875rem',
-                    color: 'var(--text-muted)',
-                  }}
-                  data-testid="navbar-user-email"
-                >
-                  {user.email}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Sign Out Button */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleLogout}
-            loading={loggingOut}
-            ariaLabel="Log out of application"
-            data-testid="navbar-logout-btn"
+          <kbd
+            style={{
+              position: 'absolute',
+              right: '0.625rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.125rem 0.375rem',
+              fontSize: '0.6875rem',
+              fontWeight: 600,
+              color: 'var(--text-muted, #64748b)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '0.35rem',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+              fontFamily: 'inherit',
+            }}
           >
-            Sign Out
-          </Button>
+            ⌘K
+          </kbd>
+        </div>
+      </div>
+
+      {/* Right: Notifications, Theme Switcher, and User Profile Details */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Notification Bell */}
+        <button
+          type="button"
+          style={{
+            width: '2.125rem',
+            height: '2.125rem',
+            borderRadius: '0.625rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'var(--bg-container-low)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary, #94a3b8)',
+            cursor: 'pointer',
+            transition: 'border-color var(--transition-fast), color var(--transition-fast)',
+          }}
+          aria-label="Notifications"
+          title="Notifications"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '1.15rem' }}>
+            notifications
+          </span>
+        </button>
+
+        {/* Theme Switcher Button (Sun in Dark Mode) */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          style={{
+            width: '2.125rem',
+            height: '2.125rem',
+            borderRadius: '0.625rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'var(--bg-container-low)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary, #94a3b8)',
+            cursor: 'pointer',
+            transition: 'border-color var(--transition-fast), color var(--transition-fast)',
+          }}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '1.15rem' }}>
+            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+          </span>
+        </button>
+
+        {/* User Identity: Avatar + Name & Email */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginLeft: '0.25rem' }}>
+          {/* Avatar initial circle */}
+          <div
+            style={{
+              width: '2rem',
+              height: '2rem',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-primary, #6366f1)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              flexShrink: 0,
+              letterSpacing: '0.02em',
+            }}
+          >
+            {getInitials(user?.name)}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+            <span
+              style={{
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: 'var(--text-primary, #ffffff)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              data-testid="navbar-user-name"
+            >
+              {user?.name || 'Pranav'}
+            </span>
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                color: 'var(--text-muted, #64748b)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              data-testid="navbar-user-email"
+            >
+              {user?.email || 'p@gmail.com'}
+            </span>
+          </div>
         </div>
       </div>
     </header>

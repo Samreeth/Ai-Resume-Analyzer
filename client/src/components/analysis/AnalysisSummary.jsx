@@ -91,21 +91,24 @@ export const AnalysisSummary = ({ analysis }) => {
             </h2>
           </div>
 
-          <span
+          <div
             style={{
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: 'var(--accent-primary, #818cf8)',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
               backgroundColor: 'rgba(99, 102, 241, 0.12)',
               border: '1px solid rgba(99, 102, 241, 0.3)',
-              padding: '0.2rem 0.55rem',
-              borderRadius: 'var(--radius-full)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#818cf8',
             }}
+            title="Deterministic Calculation"
           >
-            ENGINE VERIFIED
-          </span>
+            <span className="material-symbols-outlined" style={{ fontSize: '0.95rem' }}>
+              tune
+            </span>
+          </div>
         </div>
 
         {/* Center Score Display with Circular Meter */}
@@ -126,13 +129,19 @@ export const AnalysisSummary = ({ analysis }) => {
               style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
               aria-hidden="true"
             >
+              <defs>
+                <linearGradient id="scoreMeterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#06b6d4" />
+                  <stop offset="100%" stopColor="#6366f1" />
+                </linearGradient>
+              </defs>
               {/* Background Track */}
               <circle
                 cx="46"
                 cy="46"
                 r={radius}
                 fill="none"
-                stroke="var(--bg-elevated, rgba(255, 255, 255, 0.08))"
+                stroke="var(--bg-container-low, rgba(255, 255, 255, 0.08))"
                 strokeWidth="8"
               />
               {/* Value Ring */}
@@ -141,7 +150,7 @@ export const AnalysisSummary = ({ analysis }) => {
                 cy="46"
                 r={radius}
                 fill="none"
-                stroke="var(--accent-primary, #6366f1)"
+                stroke="url(#scoreMeterGradient)"
                 strokeWidth="8"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -163,12 +172,25 @@ export const AnalysisSummary = ({ analysis }) => {
                 pointerEvents: 'none',
               }}
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: '1.2rem', color: 'var(--accent-primary, #818cf8)' }}
+              <div
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                insert_chart_outlined
-              </span>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: '0.95rem', color: '#818cf8' }}
+                >
+                  insert_chart_outlined
+                </span>
+              </div>
             </div>
           </div>
 
@@ -223,10 +245,16 @@ export const AnalysisSummary = ({ analysis }) => {
           <span
             style={{
               fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.2rem',
               color: delta >= 0 ? '#10b981' : '#f87171',
             }}
           >
-            {delta >= 0 ? `↑ +${delta.toFixed(1)}% delta` : `↓ ${delta.toFixed(1)}% delta`}
+            <span className="material-symbols-outlined" style={{ fontSize: '0.95rem' }}>
+              {delta >= 0 ? 'trending_up' : 'trending_down'}
+            </span>
+            <span>{delta >= 0 ? `+${delta.toFixed(1)}% vs. baseline` : `${delta.toFixed(1)}% vs. baseline`}</span>
           </span>
         </div>
       </div>
@@ -273,19 +301,24 @@ export const AnalysisSummary = ({ analysis }) => {
             </h2>
           </div>
 
-          <span
+          <div
             style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: 'var(--accent-primary, #a5b4fc)',
-              backgroundColor: 'rgba(99, 102, 241, 0.12)',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              padding: '0.2rem 0.65rem',
-              borderRadius: 'var(--radius-full)',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#10b981',
             }}
+            title="Skill Precision"
           >
-            {totalDetected} / {totalSkills} Detected
-          </span>
+            <span className="material-symbols-outlined" style={{ fontSize: '0.95rem' }}>
+              code
+            </span>
+          </div>
         </div>
 
         {/* Progress Bars Stack */}
@@ -327,7 +360,7 @@ export const AnalysisSummary = ({ analysis }) => {
               style={{
                 height: '6px',
                 borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--bg-elevated, rgba(255, 255, 255, 0.08))',
+                backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
                 overflow: 'hidden',
               }}
             >
@@ -380,7 +413,7 @@ export const AnalysisSummary = ({ analysis }) => {
               style={{
                 height: '6px',
                 borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--bg-elevated, rgba(255, 255, 255, 0.08))',
+                backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
                 overflow: 'hidden',
               }}
             >

@@ -33,8 +33,9 @@ export const SkillMatchList = ({ skills = [] }) => {
       <div
         key={skill.skill_id || skill.skill_name}
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.06))',
+          backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
+          border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.07))',
+          borderLeft: `3px solid ${isMatched ? '#10b981' : '#ef4444'}`,
           borderRadius: 'var(--radius-lg, 0.75rem)',
           padding: '0.85rem 1.15rem',
           display: 'flex',
@@ -151,12 +152,12 @@ export const SkillMatchList = ({ skills = [] }) => {
         {skill.evidence && (
           <div
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              backgroundColor: 'rgba(0, 0, 0, 0.35)',
               borderLeft: `2.5px solid ${isMatched ? '#10b981' : '#ef4444'}`,
               borderRadius: '0.375rem',
               padding: '0.5rem 0.8rem',
               fontSize: '0.8rem',
-              color: 'var(--text-secondary, #cbd5e1)',
+              color: 'var(--text-secondary, #94a3b8)',
               lineHeight: 1.5,
               wordBreak: 'break-word',
             }}
@@ -215,7 +216,7 @@ export const SkillMatchList = ({ skills = [] }) => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
+            backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
             border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
             borderRadius: 'var(--radius-full)',
             padding: '0.2rem',
@@ -307,9 +308,9 @@ export const SkillMatchList = ({ skills = [] }) => {
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    color: '#fb7185',
-                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                    border: '1px solid rgba(244, 63, 94, 0.25)',
+                    color: 'var(--accent-secondary, #818cf8)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
                     padding: '0.15rem 0.55rem',
                     borderRadius: 'var(--radius-full)',
                     whiteSpace: 'nowrap',
@@ -351,9 +352,9 @@ export const SkillMatchList = ({ skills = [] }) => {
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    color: '#818cf8',
-                    backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    color: '#fbbf24',
+                    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                     padding: '0.15rem 0.55rem',
                     borderRadius: 'var(--radius-full)',
                     whiteSpace: 'nowrap',

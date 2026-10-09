@@ -497,8 +497,52 @@ CRITICAL RULES:
    - NEVER omit 'source_type' on any item.
    - NEVER invent or fabricate evidence snippets, missing skills, or experiences.
    - NEVER classify absence-of-evidence (e.g., "No verified AWS experience found") as "RESUME_EVIDENCE". Use "DETERMINISTIC_ANALYSIS" with evidence_snippet null.
-   - NEVER override deterministic matching.
-7. Return ONLY a valid JSON object matching the requested schema.`;
+7. Return ONLY a valid JSON object matching this EXACT schema:
+{
+  "overall_context": {
+    "source_type": "DETERMINISTIC_ANALYSIS",
+    "summary": "High-level summary comparing candidate to role (min 5 characters)",
+    "evidence_snippet": null
+  },
+  "strengths": [
+    {
+      "claim": "Candidate verified strength (min 3 characters)",
+      "source_type": "RESUME_EVIDENCE",
+      "evidence_snippet": "Verbatim quote from candidate resume text (3-400 characters)"
+    }
+  ],
+  "gaps": [
+    {
+      "claim": "Missing qualification or area of improvement (min 3 characters)",
+      "source_type": "DETERMINISTIC_ANALYSIS",
+      "evidence_snippet": null
+    }
+  ],
+  "requirement_analysis": [
+    {
+      "requirement": "Job requirement title/skill",
+      "context": "Context explaining how candidate satisfies or lacks this requirement",
+      "source_type": "JOB_REQUIREMENT",
+      "evidence_snippet": null,
+      "match_type": "EXACT_MATCH"
+    }
+  ],
+  "transferable_experience": [
+    {
+      "claim": "Transferable experience claim (min 3 characters)",
+      "source_type": "RESUME_EVIDENCE",
+      "evidence_snippet": "Verbatim quote from candidate resume text"
+    }
+  ],
+  "recommendations": [
+    {
+      "recommendation": "Concrete actionable recommendation (min 3 characters)",
+      "reason": "Why this recommendation is important for this role (min 3 characters)",
+      "source_type": "DETERMINISTIC_ANALYSIS",
+      "evidence_snippet": null
+    }
+  ]
+}`;
 
   const matchedReq =
     deterministicResults?.matched_required?.join(', ') ||
@@ -703,7 +747,28 @@ CRITICAL ARCHITECTURAL CONSTRAINTS:
    - NEVER claim the candidate has a missing skill from <DETERMINISTIC_ANALYSIS>.
 4. PII PROTECTION:
    - Never quote or extract personal identifiers (names, emails, phones, addresses, postal/PIN codes). Never cite redaction markers like [EMAIL REDACTED] as evidence.
-5. Return ONLY a valid JSON object matching the requested schema.`;
+5. Return ONLY a valid JSON object matching this EXACT schema:
+{
+  "overall_strategy": {
+    "summary": "Executive synthesis connecting verified strengths and deterministic gaps to the role"
+  },
+  "recommendations": [
+    {
+      "id": "rec-1",
+      "category": "SKILL_GAP",
+      "source_type": "DETERMINISTIC_ANALYSIS",
+      "title": "Clear action title",
+      "recommendation": "Concrete actionable advice",
+      "rationale": "Why this advice improves candidate alignment",
+      "priority": "HIGH",
+      "evidence_snippet": null
+    }
+  ]
+}
+Note on recommendation categories and source_type:
+- For SKILL_GAP: category="SKILL_GAP", source_type="DETERMINISTIC_ANALYSIS", evidence_snippet=null (priority "HIGH" if missing required, "MEDIUM" if missing preferred).
+- For RESUME_STRENGTH: category="RESUME_STRENGTH", source_type="RESUME_EVIDENCE", evidence_snippet="Exact quote from <CANDIDATE_RESUME>".
+- For JOB_REQUIREMENT: category="JOB_REQUIREMENT", source_type="JOB_REQUIREMENT", evidence_snippet="Exact quote from <JOB_DESCRIPTION>".`;
 
   const matchedReq =
     deterministicResults?.matched_required?.join(', ') ||

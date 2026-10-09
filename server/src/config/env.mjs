@@ -21,7 +21,7 @@ export const config = {
   maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || '5', 10),
   // Google Gemini API Configuration (Disabled by default, optional AI layer)
   geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
-  geminiModel: (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim(),
+  geminiModel: (process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim(),
   geminiEnabled: process.env.GEMINI_ENABLED === 'true',
   geminiTimeoutMs: Math.max(1000, parseInt(process.env.GEMINI_TIMEOUT_MS || '10000', 10) || 10000),
 };

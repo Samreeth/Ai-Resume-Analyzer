@@ -111,7 +111,7 @@ export const Recommendations = ({
       className="card"
       data-testid="recommendations-section"
       style={{
-        backgroundColor: 'var(--bg-card, #111622)',
+        backgroundColor: 'var(--bg-card, rgb(23, 24, 26))',
         border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
         borderRadius: 'var(--radius-xl, 1.25rem)',
         padding: '1.25rem 1.5rem',
@@ -301,7 +301,6 @@ export const Recommendations = ({
 
               {recommendations.map((rec, index) => {
                 const priorityVariant = getPriorityVariant(rec.priority);
-                const accentColor = getPriorityColor(rec.priority);
                 const isCurrentPriority = rec.priority === activePriority;
 
                 return (
@@ -367,36 +366,36 @@ export const Recommendations = ({
                     {/* Action Step */}
                     <div
                       style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                        borderLeft: `2.5px solid ${accentColor}`,
                         padding: '0.55rem 0.85rem',
-                        borderRadius: '0.375rem',
-                        marginTop: '0.15rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'var(--bg-container-low, rgb(19, 19, 22))',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.06))',
+                        fontSize: '0.78rem',
+                        color: 'var(--text-secondary, #94a3b8)',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.6rem',
+                        lineHeight: 1.45,
+                        marginTop: '0.35rem',
                       }}
                     >
                       <span
+                        className="material-symbols-outlined"
                         style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          color: 'var(--text-primary)',
-                          display: 'block',
-                          marginBottom: '0.2rem',
-                          letterSpacing: '0.04em',
+                          fontSize: '1rem',
+                          color: '#818cf8',
+                          flexShrink: 0,
+                          marginTop: '0.1rem',
                         }}
                       >
-                        Recommended Action:
+                        lightbulb
                       </span>
-                      <p
-                        style={{
-                          fontSize: '0.78rem',
-                          color: 'var(--text-secondary, #cbd5e1)',
-                          margin: 0,
-                          lineHeight: 1.45,
-                        }}
-                      >
-                        {rec.action}
-                      </p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ color: 'var(--text-primary)', fontWeight: 600, marginRight: '0.35rem' }}>
+                          Recommended Action:
+                        </strong>
+                        <span>{rec.action}</span>
+                      </div>
                     </div>
                   </div>
                 );

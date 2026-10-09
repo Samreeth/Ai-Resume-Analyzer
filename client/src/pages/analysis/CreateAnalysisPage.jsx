@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast.js';
 import Spinner from '../../components/common/Spinner.jsx';
 import Button from '../../components/common/Button.jsx';
 import Icon from '../../components/common/Icon.jsx';
+import { AITextLoading } from '@/components/ui/ai-text-loading';
 
 /**
  * New Compatibility Analysis Page
@@ -72,10 +73,20 @@ export const CreateAnalysisPage = () => {
 
     try {
       setIsSubmitting(true);
+      const startTime = Date.now();
+
       const res = await analysisApi.createAnalysis({
         resumeId: selectedResumeId,
         jobId: selectedJobId,
       });
+
+      // Maintain at least 5 seconds of loading time in browser/runtime for deep background analysis experience
+      const minDelay =
+        typeof process !== 'undefined' && process.env?.NODE_ENV === 'test' ? 50 : 5000;
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minDelay) {
+        await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+      }
 
       const analysis = res.analysis || res;
       toast.success('Compatibility analysis completed successfully.');
@@ -100,54 +111,59 @@ export const CreateAnalysisPage = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: '1.5rem',
-        maxWidth: '720px',
+        maxWidth: '920px',
         margin: '0 auto',
+        width: '100%',
       }}
     >
       {/* 1. Breadcrumb Navigation */}
-      <div>
-        <Link
-          to="/analyses"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            color: 'var(--text-secondary)',
-            fontSize: 'var(--text-sm)',
-            textDecoration: 'none',
-            transition: 'color var(--transition-fast)',
-          }}
-          data-testid="back-to-analyses-link"
-        >
-          <Icon name="arrow-left" size={14} />
-          <span>Back to Analyses</span>
-        </Link>
-      </div>
+      {!isSubmitting && (
+        <div>
+          <Link
+            to="/analyses"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: 'var(--text-secondary)',
+              fontSize: 'var(--text-sm)',
+              textDecoration: 'none',
+              transition: 'color var(--transition-fast)',
+            }}
+            data-testid="back-to-analyses-link"
+          >
+            <Icon name="arrow-left" size={14} />
+            <span>Back to Analyses</span>
+          </Link>
+        </div>
+      )}
 
       {/* 2. Header */}
-      <div>
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-            margin: 0,
-          }}
-        >
-          New Compatibility Match
-        </h1>
-        <p
-          style={{
-            fontSize: '0.8125rem',
-            color: 'var(--text-secondary)',
-            marginTop: '0.2rem',
-            margin: 0,
-          }}
-        >
-          Evaluate a candidate resume against role criteria to uncover skill alignment, gaps, and recommendations.
-        </p>
-      </div>
+      {!isSubmitting && (
+        <div>
+          <h1
+            style={{
+              fontSize: '1.65rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}
+          >
+            New Compatibility Match
+          </h1>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: 'var(--text-secondary)',
+              marginTop: '0.25rem',
+              margin: 0,
+            }}
+          >
+            Evaluate a candidate resume against role criteria to uncover skill alignment, gaps, and recommendations.
+          </p>
+        </div>
+      )}
 
       {/* 3. Loading Options State */}
       {isLoadingOptions && (
@@ -197,16 +213,104 @@ export const CreateAnalysisPage = () => {
         </div>
       )}
 
-      {/* 5. Selection Form Card */}
-      {!isLoadingOptions && !optionsError && (
+      {/* 5. Submitting / Processing State: ONLY show loading animation for this section */}
+      {isSubmitting && (
+        <div
+          className="card"
+          data-testid="create-analysis-submitting"
+          style={{
+            padding: '4.5rem 3rem',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-xl, 1.25rem)',
+            boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.3))',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            minHeight: '480px',
+            gap: '1.5rem',
+            margin: '1.5rem 0',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            style={{
+              width: '4rem',
+              height: '4rem',
+              borderRadius: '1.15rem',
+              backgroundColor: 'rgba(99, 102, 241, 0.12)',
+              border: '1px solid rgba(99, 102, 241, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent-primary, #818cf8)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '2.25rem', color: '#818cf8' }}>
+              auto_awesome
+            </span>
+          </div>
+
+          <AITextLoading
+            texts={[
+              "Evaluating resume qualifications...",
+              "Analyzing job requirements & domain skills...",
+              "Matching candidate experience against criteria...",
+              "Computing contextual compatibility scores...",
+              "Synthesizing match report...",
+            ]}
+            interval={1000}
+          />
+
+          <p
+            style={{
+              color: 'var(--text-secondary)',
+              fontSize: '0.875rem',
+              maxWidth: '440px',
+              margin: 0,
+              lineHeight: 1.5,
+            }}
+          >
+            Performing deep semantic qualification mapping and requirement verification. Personal contact details are automatically redacted.
+          </p>
+
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.75rem',
+              color: 'var(--text-muted)',
+              marginTop: '0.5rem',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '0.9rem', color: '#10b981' }}>
+              lock
+            </span>
+            <span>PII Redacted Securely • Deterministic Scoring Engine</span>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Selection Form Card: Expanded Size & Spacing */}
+      {!isLoadingOptions && !optionsError && !isSubmitting && (
         <div
           className="card"
           style={{
-            padding: '1.75rem',
+            padding: '2.5rem 2.75rem',
             backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: 'var(--shadow-xs)',
+            borderRadius: 'var(--radius-xl, 1.25rem)',
+            boxShadow: 'var(--shadow-md)',
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
           <form onSubmit={handleSubmit} noValidate>

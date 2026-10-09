@@ -18,7 +18,7 @@ describe('Navigation Suite', () => {
     vi.clearAllMocks();
   });
 
-  // 15. Navbar user/logout behavior
+  // 15. Navigation user/logout behavior
   it('15. Navbar user/logout behavior: renders current user information and triggers logout handler', async () => {
     const logoutMock = vi.fn().mockResolvedValue({});
 
@@ -33,6 +33,7 @@ describe('Navigation Suite', () => {
         >
           <ToastProvider>
             <Navbar />
+            <Sidebar isOpen={true} onClose={() => {}} />
           </ToastProvider>
         </AuthContext.Provider>
       </MemoryRouter>
@@ -41,9 +42,10 @@ describe('Navigation Suite', () => {
     // Verify User Identity rendered
     expect(screen.getByTestId('navbar-user-name')).toHaveTextContent('Samreeth');
     expect(screen.getByTestId('navbar-user-email')).toHaveTextContent('samreeth@example.com');
+    expect(screen.getByTestId('sidebar-workspace-title')).toHaveTextContent("Samreeth's Workspace");
 
-    // Click Sign Out
-    const logoutBtn = screen.getByTestId('navbar-logout-btn');
+    // Click Sign Out in Sidebar under My Workspace
+    const logoutBtn = screen.getByTestId('sidebar-logout-btn');
     fireEvent.click(logoutBtn);
 
     await waitFor(() => {
@@ -54,7 +56,9 @@ describe('Navigation Suite', () => {
   it('16. Sidebar navigation: provides active routes to Dashboard, Resumes, Jobs, and Analyses', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
-        <Sidebar isOpen={true} onClose={() => {}} />
+        <ToastProvider>
+          <Sidebar isOpen={true} onClose={() => {}} />
+        </ToastProvider>
       </MemoryRouter>
     );
 
