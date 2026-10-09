@@ -8,6 +8,20 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from server/.env if available
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+import os from 'os';
+
+const getUploadDir = () => {
+  if (process.env.UPLOAD_DIR) {
+    return path.resolve(__dirname, process.env.UPLOAD_DIR);
+  }
+  // In Vercel serverless / AWS Lambda, the root filesystem is strictly read-only.
+  // /tmp is the only permitted writable filesystem location.
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production') {
+    return path.join(os.tmpdir(), 'uploads');
+  }
+  return path.resolve(__dirname, '../../../uploads');
+};
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '5000', 10),
@@ -17,7 +31,7 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   nlpServiceUrl: process.env.NLP_SERVICE_URL || 'http://localhost:8000',
   nlpServiceToken: process.env.NLP_SERVICE_TOKEN || '',
-  uploadDir: path.resolve(__dirname, process.env.UPLOAD_DIR || '../../../uploads'),
+  uploadDir: getUploadDir(),
   maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || '5', 10),
   // Google Gemini API Configuration (Disabled by default, optional AI layer)
   geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
