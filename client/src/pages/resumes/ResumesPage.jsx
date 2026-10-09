@@ -174,7 +174,7 @@ export const ResumesPage = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="header-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {/* View Toggle (Grid / List visual indicator) */}
           <div
             style={{
@@ -252,6 +252,7 @@ export const ResumesPage = () => {
       {/* 3. Search & Filter Controls Toolbar */}
       {!isLoading && !error && resumes.length > 0 && (
         <div
+          className="responsive-toolbar"
           style={{
             display: 'flex',
             flexDirection: 'row',
@@ -262,7 +263,7 @@ export const ResumesPage = () => {
           }}
         >
           {/* Search Input */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
+          <div className="responsive-toolbar-search" style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
             <span
               className="material-symbols-outlined"
               style={{
@@ -561,7 +562,7 @@ export const ResumesPage = () => {
             </div>
           ) : (
             <div
-              className="grid grid-cols-2 gap-4"
+              className="resumes-grid"
               data-testid="resumes-grid"
               style={{
                 display: 'grid',

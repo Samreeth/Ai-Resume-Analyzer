@@ -303,7 +303,7 @@ export const JobComparisonCard = ({ resumeId, jobId }) => {
         )}
 
         {/* Strengths & Gaps 2-Column Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
           {/* Candidate Strengths */}
           <div
             style={{

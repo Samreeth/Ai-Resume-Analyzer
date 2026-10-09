@@ -76,7 +76,7 @@ export const LoginPage = () => {
 
   return (
     <div
-      className="card"
+      className="card auth-card"
       style={{
         padding: '2rem',
         backgroundColor: 'var(--bg-card)',

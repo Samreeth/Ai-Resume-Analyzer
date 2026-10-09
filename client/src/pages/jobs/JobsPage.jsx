@@ -226,7 +226,7 @@ export const JobsPage = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="header-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Create / Cancel Toggle Button */}
           <Button
             type="button"
@@ -424,6 +424,7 @@ export const JobsPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Search & Filter Toolbar */}
           <div
+            className="responsive-toolbar"
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -434,7 +435,7 @@ export const JobsPage = () => {
             }}
           >
             {/* Search Input */}
-            <div style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
+            <div className="responsive-toolbar-search" style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
               <span
                 className="material-symbols-outlined"
                 style={{
@@ -577,7 +578,7 @@ export const JobsPage = () => {
 
           {/* Jobs Grid */}
           <div
-            className="grid grid-cols-2 gap-4"
+            className="jobs-grid resumes-grid"
             data-testid="jobs-grid"
             style={{ minHeight: '100px' }}
           >

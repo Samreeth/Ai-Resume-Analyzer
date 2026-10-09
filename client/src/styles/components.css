@@ -469,7 +469,179 @@ select.input-field:focus {
 }
 
 /* ==========================================================================
-   SIDEBAR RESPONSIVE
+   RESPONSIVE DESIGN SYSTEM & MULTI-DEVICE BREAKPOINTS
+   ========================================================================== */
+
+/* Layout structure */
+.app-navbar-wrapper {
+  padding: 0.75rem 1rem 0.5rem 1rem;
+  flex-shrink: 0;
+}
+
+.app-main-content {
+  flex: 1;
+  padding: 1rem 1.5rem 1.75rem 1.5rem;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-main-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Sidebar close button */
+.sidebar-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-close-btn:hover {
+  background: var(--bg-container-high);
+  color: var(--text-primary);
+}
+
+/* Table container with horizontal touch-scroll */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive > table {
+  min-width: 580px;
+}
+
+/* Dashboard Columns Grid */
+.dashboard-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.dashboard-main-col {
+  grid-column: span 8;
+}
+
+.dashboard-side-col {
+  grid-column: span 4;
+}
+
+/* Dashboard Metrics Ribbon */
+.dashboard-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+/* Resume Detail Grid */
+.resume-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.resume-detail-main-col {
+  grid-column: span 8 !important;
+}
+
+.resume-detail-side-col {
+  grid-column: span 4 !important;
+}
+
+/* Extraction pipeline */
+.extraction-pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  position: relative;
+}
+
+/* Resumes Grid */
+.resumes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  min-height: 100px;
+}
+
+/* Analysis Summary Grid */
+.analysis-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+/* Create Analysis Card */
+.create-analysis-card {
+  padding: 2.5rem 2.75rem;
+}
+
+/* Quick search bar responsive */
+.navbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-user-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.navbar-search-kbd {
+  display: inline-flex;
+}
+
+/* ==========================================================================
+   BREAKPOINTS: DESKTOP & LAPTOP TO TABLET (<= 1024px)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .dashboard-columns-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-main-col,
+  .dashboard-side-col {
+    grid-column: 1 / -1 !important;
+  }
+
+  .resume-detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  .resume-detail-main-col,
+  .resume-detail-side-col {
+    grid-column: 1 / -1 !important;
+  }
+
+  .lg-col-8,
+  .lg-col-4,
+  .lg\:col-span-8,
+  .lg\:col-span-4 {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* ==========================================================================
+   BREAKPOINTS: TABLET & MOBILE DRAWER (<= 768px)
    ========================================================================== */
 @media (max-width: 768px) {
   .navbar-mobile-toggle {
@@ -478,10 +650,12 @@ select.input-field:focus {
 
   .sidebar {
     position: fixed !important;
-    top: 0.75rem !important;
-    bottom: 0.75rem !important;
-    left: 0.75rem !important;
-    height: calc(100vh - 1.5rem) !important;
+    top: 0.5rem !important;
+    bottom: 0.5rem !important;
+    left: 0.5rem !important;
+    height: calc(100vh - 1rem) !important;
+    width: 270px !important;
+    max-width: calc(100vw - 2rem) !important;
     margin: 0 !important;
     border-radius: 1.125rem !important;
     z-index: 100 !important;
@@ -492,6 +666,95 @@ select.input-field:focus {
 
   .sidebar.sidebar-open {
     transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: inline-flex !important;
+  }
+
+  .app-navbar-wrapper {
+    padding: 0.5rem 0.75rem 0.35rem 0.75rem;
+  }
+
+  .app-main-content {
+    padding: 0.75rem 1rem 1.25rem 1rem;
+  }
+
+  .dashboard-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   BREAKPOINTS: MOBILE PHONES (<= 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .navbar-search-kbd {
+    display: none !important;
+  }
+
+  .navbar-user-text {
+    display: none !important;
+  }
+
+  .resumes-grid,
+  .analysis-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .extraction-pipeline-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .create-analysis-card {
+    padding: 1.25rem 1rem !important;
+  }
+
+  .responsive-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .responsive-toolbar-search {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .header-actions-group {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .header-actions-group > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* ==========================================================================
+   BREAKPOINTS: SMALL MOBILE PHONES (<= 480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .app-navbar-wrapper {
+    padding: 0.35rem 0.5rem 0.25rem 0.5rem;
+  }
+
+  .app-main-content {
+    padding: 0.5rem 0.5rem 1rem 0.5rem;
+  }
+
+  .dashboard-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .navbar {
+    padding: 0 0.75rem !important;
+    height: 3.25rem !important;
+  }
+
+  .auth-card {
+    padding: 1.25rem 1rem !important;
   }
 }
 

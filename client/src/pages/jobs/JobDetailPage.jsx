@@ -327,7 +327,7 @@ export const JobDetailPage = () => {
               </div>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div className="header-actions-group" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <Button
                   type="button"
                   variant="secondary"

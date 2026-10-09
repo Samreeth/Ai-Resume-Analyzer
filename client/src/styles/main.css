@@ -256,6 +256,21 @@ input:focus:not(:focus-visible) {
   }
 }
 
+@media (max-width: 640px) {
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
 /* ==========================================================================
    REDUCED MOTION ACCESSIBILITY OVERRIDE
    ========================================================================== */

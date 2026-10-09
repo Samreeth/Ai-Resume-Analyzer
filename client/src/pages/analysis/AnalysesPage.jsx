@@ -185,7 +185,7 @@ export const AnalysesPage = () => {
           </p>
         </div>
 
-        <div>
+        <div className="header-actions-group">
           <Link
             to="/analyses/new"
             className="btn btn-primary"
@@ -273,6 +273,7 @@ export const AnalysesPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Search & Filter Controls Toolbar matching Resumes/Jobs */}
           <div
+            className="responsive-toolbar"
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -283,7 +284,7 @@ export const AnalysesPage = () => {
             }}
           >
             {/* Search Input */}
-            <div style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
+            <div className="responsive-toolbar-search" style={{ position: 'relative', width: '100%', maxWidth: '20rem' }}>
               <span
                 className="material-symbols-outlined"
                 style={{
@@ -409,7 +410,7 @@ export const AnalysesPage = () => {
 
           {/* Analyses Cards Grid */}
           <div
-            className="grid grid-cols-2 gap-4"
+            className="jobs-grid resumes-grid"
             data-testid="analyses-grid"
             style={{ minHeight: '100px' }}
           >

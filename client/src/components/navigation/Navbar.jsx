@@ -115,6 +115,7 @@ export const Navbar = ({ onToggleSidebar }) => {
           />
 
           <kbd
+            className="navbar-search-kbd"
             style={{
               position: 'absolute',
               right: '0.625rem',
@@ -209,7 +210,7 @@ export const Navbar = ({ onToggleSidebar }) => {
             {getInitials(user?.name)}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+          <div className="navbar-user-text" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
             <span
               style={{
                 fontSize: '0.8125rem',

@@ -266,7 +266,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Global Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+        <div className="header-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
           <Link
             to="/analyses/new"
             style={{
@@ -320,6 +320,7 @@ export const DashboardPage = () => {
 
       {/* 2. 4-Column Metric Summary Ribbon */}
       <div
+        className="dashboard-metrics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -715,6 +716,7 @@ export const DashboardPage = () => {
 
       {/* 3. Primary Dual-Column Workspace Section (8 Cols / 4 Cols) */}
       <div
+        className="dashboard-columns-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
@@ -920,7 +922,7 @@ export const DashboardPage = () => {
               />
             </div>
           ) : (
-            <div style={{ overflowX: 'auto', width: '100%' }}>
+            <div className="table-responsive">
               <table
                 style={{
                   width: '100%',

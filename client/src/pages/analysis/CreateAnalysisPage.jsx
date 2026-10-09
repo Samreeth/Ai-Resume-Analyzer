@@ -302,9 +302,8 @@ export const CreateAnalysisPage = () => {
       {/* 6. Selection Form Card: Expanded Size & Spacing */}
       {!isLoadingOptions && !optionsError && !isSubmitting && (
         <div
-          className="card"
+          className="card create-analysis-card"
           style={{
-            padding: '2.5rem 2.75rem',
             backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-xl, 1.25rem)',
@@ -610,6 +609,7 @@ export const CreateAnalysisPage = () => {
 
             {/* Step 3: Action Buttons */}
             <div
+              className="header-actions-group"
               style={{
                 display: 'flex',
                 justifyContent: 'flex-end',

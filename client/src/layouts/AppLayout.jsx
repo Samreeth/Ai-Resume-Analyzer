@@ -36,21 +36,13 @@ export const AppLayout = () => {
         }}
       >
         {/* Top Header Navbar Wrapper with Curved Margin */}
-        <div style={{ padding: '0.75rem 1rem 0.5rem 1rem', flexShrink: 0 }}>
+        <div className="app-navbar-wrapper">
           <Navbar onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
         </div>
 
         {/* Scrollable Main Content */}
-        <main
-          style={{
-            flex: 1,
-            padding: '1rem 1.5rem 1.75rem 1.5rem',
-            minWidth: 0,
-            overflowX: 'hidden',
-            overflowY: 'auto',
-          }}
-        >
-          <div style={{ maxWidth: '1360px', margin: '0 auto', width: '100%' }}>
+        <main className="app-main-content">
+          <div className="app-main-container">
             <Outlet />
           </div>
         </main>

@@ -42,6 +42,7 @@ export const AnalysisSummary = ({ analysis }) => {
 
   return (
     <div
+      className="analysis-summary-grid"
       data-testid="analysis-summary-card"
       style={{
         display: 'grid',

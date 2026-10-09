@@ -391,7 +391,7 @@ export const AnalysisDetailPage = () => {
               </h1>
 
               {/* Action Buttons: Re-run Analysis + Delete */}
-              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+              <div className="header-actions-group" style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => navigate('/analyses/new')}

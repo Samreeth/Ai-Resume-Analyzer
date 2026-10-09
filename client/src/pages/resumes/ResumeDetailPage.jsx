@@ -482,7 +482,7 @@ export const ResumeDetailPage = () => {
           </div>
 
           {/* Right: Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className="header-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             {/* If completed, show Match with Job CTA */}
             {isExtracted && (
               <Link
@@ -582,6 +582,7 @@ export const ResumeDetailPage = () => {
         </div>
 
         <div
+          className="extraction-pipeline-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -813,6 +814,7 @@ export const ResumeDetailPage = () => {
 
       {/* Main 2-Column Content Grid */}
       <div
+        className="resume-detail-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(12, 1fr)',
@@ -822,13 +824,12 @@ export const ResumeDetailPage = () => {
       >
         {/* Left Column (8 cols on desktop): AI Understanding Profile & Raw Text Preview */}
         <div
+          className="resume-detail-main-col lg:col-span-8"
           style={{
-            gridColumn: 'span 12',
             display: 'flex',
             flexDirection: 'column',
             gap: '1.75rem',
           }}
-          className="lg:col-span-8"
         >
           {/* AI Resume Understanding Profile Card */}
           <ResumeAiProfileCard
@@ -974,13 +975,12 @@ export const ResumeDetailPage = () => {
 
         {/* Right Column (4 cols on desktop): Metadata & Diagnostics Sidebar */}
         <div
+          className="resume-detail-side-col lg:col-span-4"
           style={{
-            gridColumn: 'span 12',
             display: 'flex',
             flexDirection: 'column',
             gap: '1.5rem',
           }}
-          className="lg:col-span-4"
         >
           {/* Document Specifications Card */}
           <div

@@ -149,19 +149,35 @@ export const Sidebar = ({ isOpen = false, onClose }) => {
               </span>
             </div>
 
-            {/* Version Badge in curved pill */}
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                color: 'var(--text-muted, #94a3b8)',
-                padding: '0.125rem 0.45rem',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--bg-container-low)',
-              }}
-            >
-              v2.4
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {/* Version Badge in curved pill */}
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  color: 'var(--text-muted, #94a3b8)',
+                  padding: '0.125rem 0.45rem',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--bg-container-low)',
+                }}
+              >
+                v2.4
+              </span>
+
+              {/* Mobile Drawer Close Button */}
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="sidebar-close-btn"
+                  aria-label="Close navigation sidebar"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.15rem' }}>
+                    close
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* 2. Section Heading: WORKSPACE */}
