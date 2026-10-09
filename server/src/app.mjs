@@ -19,11 +19,29 @@ app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman) or matching allowed origins
-      if (!origin || origin === config.clientUrl || origin.startsWith('http://localhost:')) {
+      // Allow requests with no origin (like mobile apps, curl, postman, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowedExplicit =
+        origin === config.clientUrl ||
+        (config.clientUrl?.includes(',') &&
+          config.clientUrl.split(',').map((u) => u.trim()).includes(origin));
+
+      const isLocalhost =
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:');
+
+      // Automatically allow Vercel production & preview domains (*.vercel.app)
+      const isVercel =
+        origin.endsWith('.vercel.app') ||
+        /^https:\/\/([a-zA-Z0-9-]+\.)*vercel\.app$/.test(origin);
+
+      if (isAllowedExplicit || isLocalhost || isVercel) {
         callback(null, true);
       } else {
-        callback(new Error('Blocked by CORS policy'));
+        callback(new Error(`Blocked by CORS policy for origin: ${origin}`));
       }
     },
     credentials: true,
